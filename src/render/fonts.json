@@ -1,0 +1,242 @@
+[
+ {
+  "id": "roboto",
+  "family": "Roboto",
+  "category": "sans",
+  "files": {
+   "regular": "roboto/regular.ttf",
+   "italic": "roboto/italic.ttf",
+   "bold": "roboto/bold.ttf",
+   "boldItalic": "roboto/boldItalic.ttf"
+  },
+  "bytes": 241024
+ },
+ {
+  "id": "open-sans",
+  "family": "Open Sans",
+  "category": "sans",
+  "files": {
+   "regular": "open-sans/regular.ttf",
+   "italic": "open-sans/italic.ttf",
+   "bold": "open-sans/bold.ttf",
+   "boldItalic": "open-sans/boldItalic.ttf"
+  },
+  "bytes": 160264
+ },
+ {
+  "id": "source-sans-3",
+  "family": "Source Sans 3",
+  "category": "sans",
+  "files": {
+   "regular": "source-sans-3/regular.ttf",
+   "italic": "source-sans-3/italic.ttf",
+   "bold": "source-sans-3/bold.ttf",
+   "boldItalic": "source-sans-3/boldItalic.ttf"
+  },
+  "bytes": 414040
+ },
+ {
+  "id": "ibm-plex-sans",
+  "family": "IBM Plex Sans",
+  "category": "sans",
+  "files": {
+   "regular": "ibm-plex-sans/regular.ttf",
+   "italic": "ibm-plex-sans/italic.ttf",
+   "bold": "ibm-plex-sans/bold.ttf",
+   "boldItalic": "ibm-plex-sans/boldItalic.ttf"
+  },
+  "bytes": 317928
+ },
+ {
+  "id": "noto-sans",
+  "family": "Noto Sans",
+  "category": "sans",
+  "files": {
+   "regular": "noto-sans/regular.ttf",
+   "italic": "noto-sans/italic.ttf",
+   "bold": "noto-sans/bold.ttf",
+   "boldItalic": "noto-sans/boldItalic.ttf"
+  },
+  "bytes": 340576
+ },
+ {
+  "id": "carlito",
+  "family": "Carlito",
+  "category": "sans",
+  "files": {
+   "regular": "carlito/regular.ttf",
+   "italic": "carlito/italic.ttf",
+   "bold": "carlito/bold.ttf",
+   "boldItalic": "carlito/boldItalic.ttf"
+  },
+  "bytes": 504400
+ },
+ {
+  "id": "inter",
+  "family": "Inter",
+  "category": "sans",
+  "files": {
+   "regular": "inter/regular.ttf",
+   "italic": "inter/italic.ttf",
+   "bold": "inter/bold.ttf",
+   "boldItalic": "inter/boldItalic.ttf"
+  },
+  "bytes": 581936
+ },
+ {
+  "id": "fira-sans",
+  "family": "Fira Sans",
+  "category": "sans",
+  "files": {
+   "regular": "fira-sans/regular.ttf",
+   "italic": "fira-sans/italic.ttf",
+   "bold": "fira-sans/bold.ttf",
+   "boldItalic": "fira-sans/boldItalic.ttf"
+  },
+  "bytes": 513544
+ },
+ {
+  "id": "montserrat",
+  "family": "Montserrat",
+  "category": "sans",
+  "files": {
+   "regular": "montserrat/regular.ttf",
+   "italic": "montserrat/italic.ttf",
+   "bold": "montserrat/bold.ttf",
+   "boldItalic": "montserrat/boldItalic.ttf"
+  },
+  "bytes": 650752
+ },
+ {
+  "id": "pt-sans",
+  "family": "PT Sans",
+  "category": "sans",
+  "files": {
+   "regular": "pt-sans/regular.ttf",
+   "italic": "pt-sans/italic.ttf",
+   "bold": "pt-sans/bold.ttf",
+   "boldItalic": "pt-sans/boldItalic.ttf"
+  },
+  "bytes": 173788
+ },
+ {
+  "id": "nunito-sans",
+  "family": "Nunito Sans",
+  "category": "sans",
+  "files": {
+   "regular": "nunito-sans/regular.ttf",
+   "italic": "nunito-sans/italic.ttf",
+   "bold": "nunito-sans/bold.ttf",
+   "boldItalic": "nunito-sans/boldItalic.ttf"
+  },
+  "bytes": 206724
+ },
+ {
+  "id": "work-sans",
+  "family": "Work Sans",
+  "category": "sans",
+  "files": {
+   "regular": "work-sans/regular.ttf",
+   "italic": "work-sans/italic.ttf",
+   "bold": "work-sans/bold.ttf",
+   "boldItalic": "work-sans/boldItalic.ttf"
+  },
+  "bytes": 474428
+ },
+ {
+  "id": "noto-serif",
+  "family": "Noto Serif",
+  "category": "serif",
+  "files": {
+   "regular": "noto-serif/regular.ttf",
+   "italic": "noto-serif/italic.ttf",
+   "bold": "noto-serif/bold.ttf",
+   "boldItalic": "noto-serif/boldItalic.ttf"
+  },
+  "bytes": 390332
+ },
+ {
+  "id": "merriweather",
+  "family": "Merriweather",
+  "category": "serif",
+  "files": {
+   "regular": "merriweather/regular.ttf",
+   "italic": "merriweather/italic.ttf",
+   "bold": "merriweather/bold.ttf",
+   "boldItalic": "merriweather/boldItalic.ttf"
+  },
+  "bytes": 2040956
+ },
+ {
+  "id": "source-serif-4",
+  "family": "Source Serif 4",
+  "category": "serif",
+  "files": {
+   "regular": "source-serif-4/regular.ttf",
+   "italic": "source-serif-4/italic.ttf",
+   "bold": "source-serif-4/bold.ttf",
+   "boldItalic": "source-serif-4/boldItalic.ttf"
+  },
+  "bytes": 454452
+ },
+ {
+  "id": "eb-garamond",
+  "family": "EB Garamond",
+  "category": "serif",
+  "files": {
+   "regular": "eb-garamond/regular.ttf",
+   "italic": "eb-garamond/italic.ttf",
+   "bold": "eb-garamond/bold.ttf",
+   "boldItalic": "eb-garamond/boldItalic.ttf"
+  },
+  "bytes": 873720
+ },
+ {
+  "id": "libre-baskerville",
+  "family": "Libre Baskerville",
+  "category": "serif",
+  "files": {
+   "regular": "libre-baskerville/regular.ttf",
+   "italic": "libre-baskerville/italic.ttf",
+   "bold": "libre-baskerville/bold.ttf",
+   "boldItalic": "libre-baskerville/boldItalic.ttf"
+  },
+  "bytes": 344700
+ },
+ {
+  "id": "pt-serif",
+  "family": "PT Serif",
+  "category": "serif",
+  "files": {
+   "regular": "pt-serif/regular.ttf",
+   "italic": "pt-serif/italic.ttf",
+   "bold": "pt-serif/bold.ttf",
+   "boldItalic": "pt-serif/boldItalic.ttf"
+  },
+  "bytes": 190356
+ },
+ {
+  "id": "crimson-pro",
+  "family": "Crimson Pro",
+  "category": "serif",
+  "files": {
+   "regular": "crimson-pro/regular.ttf",
+   "italic": "crimson-pro/italic.ttf",
+   "bold": "crimson-pro/bold.ttf",
+   "boldItalic": "crimson-pro/boldItalic.ttf"
+  },
+  "bytes": 285516
+ },
+ {
+  "id": "lora",
+  "family": "Lora",
+  "category": "serif",
+  "files": {
+   "regular": "lora/regular.ttf",
+   "italic": "lora/italic.ttf",
+   "bold": "lora/bold.ttf",
+   "boldItalic": "lora/boldItalic.ttf"
+  },
+  "bytes": 269156
+ }
+]
