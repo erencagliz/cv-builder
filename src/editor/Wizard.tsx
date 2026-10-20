@@ -98,7 +98,7 @@ export function Wizard({ cv, onDownload }: { cv: CV; onDownload: () => void }) {
 
       <header className="step-head">
         <p className="eyebrow">
-          {STEPS.length} adımın {step + 1}. adımı
+          {`${STEPS.length} adımın ${step + 1}. adımı`}
         </p>
         <h2>{st.title}</h2>
         <p className="step-lead">{st.lead}</p>

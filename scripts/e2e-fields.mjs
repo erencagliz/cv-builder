@@ -18,7 +18,7 @@ const ok = (name, cond, detail = '') => {
 };
 
 const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium' });
-const ctx = await b.newContext({ viewport: { width: 1440, height: 1000 }, acceptDownloads: true });
+const ctx = await b.newContext({ locale: 'tr-TR',  viewport: { width: 1440, height: 1000 }, acceptDownloads: true });
 const p = await ctx.newPage();
 const errors = [];
 p.on('pageerror', (e) => errors.push('pageerror: ' + e.message));

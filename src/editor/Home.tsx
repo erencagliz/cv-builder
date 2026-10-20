@@ -1,9 +1,11 @@
 import { useEffect } from 'react';
 import { listCVs, saveCV } from '../store/db';
-import { sampleCV } from '../model/sample';
+import { sampleCV, sampleCVEn } from '../model/sample';
+import { uiLang } from '../i18n';
 import { navigate } from '../ui/app';
 
 export const WELCOME_NAME = 'Örnek CV';
+export const WELCOME_NAMES = new Set([WELCOME_NAME, 'Sample CV']);
 
 let opening: Promise<void> | null = null;
 
@@ -13,8 +15,9 @@ export function Home() {
     opening ??= (async () => {
       const rows = await listCVs();
       if (rows.length) return navigate(`/duzenle/${rows[0].id}`, true);
-      const cv = sampleCV();
-      cv.name = WELCOME_NAME;
+      const en = uiLang() === 'en';
+      const cv = en ? sampleCVEn() : sampleCV();
+      cv.name = en ? 'Sample CV' : WELCOME_NAME;
       await saveCV(cv);
       navigate(`/duzenle/${cv.id}`, true);
     })().finally(() => {

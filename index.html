@@ -4,15 +4,57 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <title>CV Builder · Ücretsiz, ATS uyumlu CV oluştur</title>
-    <meta name="description" content="Ücretsiz, kayıtsız ve filigransız CV oluşturucu. ATS’nin okuyabildiği PDF, Türkçe karakter desteği, askerlik ve ehliyet alanları, TR/EN tek tıkla." />
+    <meta name="description" content="Ücretsiz, kayıtsız ve filigransız CV oluşturucu. ATS puanı ve madde madde öneriler, eski CV’ni içe aktarma, Türkçe karakter desteği, askerlik ve ehliyet alanları, TR/EN tek tıkla." />
     <meta name="theme-color" content="#0F5E5A" />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <link rel="manifest" href="/manifest.webmanifest" />
+    <!-- paylaşım kartı (WhatsApp, LinkedIn, X…); %SITE_URL% derlemede gerçek adresle değişir -->
+    <link rel="canonical" href="%SITE_URL%/" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="CV Builder" />
+    <meta property="og:locale" content="tr_TR" />
+    <meta property="og:url" content="%SITE_URL%/" />
+    <meta property="og:title" content="CV Builder · Ücretsiz, ATS uyumlu CV oluştur" />
+    <meta property="og:description" content="Kayıt yok, filigran yok, ücret yok. ATS puanı, madde madde öneriler ve tarayıcında kalan verilerle profesyonel CV." />
+    <meta property="og:image" content="%SITE_URL%/og-image.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="CV Builder: ücretsiz, ATS uyumlu CV oluşturucu" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="CV Builder · Ücretsiz, ATS uyumlu CV oluştur" />
+    <meta name="twitter:description" content="Kayıt yok, filigran yok, ücret yok. ATS puanı ve madde madde öneriler." />
+    <meta name="twitter:image" content="%SITE_URL%/og-image.png" />
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "CV Builder",
+        "url": "%SITE_URL%/",
+        "applicationCategory": "BusinessApplication",
+        "operatingSystem": "Any (web browser)",
+        "inLanguage": ["tr", "en"],
+        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "TRY" },
+        "description": "Ücretsiz, kayıtsız ve ATS uyumlu CV oluşturucu. PDF ve Word çıktısı, ATS puanı, ilan eşleştirme, ön yazı."
+      }
+    </script>
   </head>
   <body>
     <div id="root"></div>
-    <noscript>Bu uygulama JavaScript gerektirir.</noscript>
+    <noscript>
+      <main style="max-width: 640px; margin: 40px auto; padding: 0 16px; font-family: system-ui, sans-serif; line-height: 1.6">
+        <h1>CV Builder — ücretsiz, ATS uyumlu CV oluşturucu</h1>
+        <p>Kayıt olmadan, filigran olmadan profesyonel bir CV hazırla ve PDF ya da Word olarak indir. CV’n bir işe alım sisteminin (ATS) gözünden puanlanır, her madde için öneri alırsın.</p>
+        <ul>
+          <li>ATS’nin okuyabildiği PDF, Türkçe karakterlerle</li>
+          <li>Askerlik, ehliyet, doğum tarihi gibi Türkiye’ye özgü alanlar</li>
+          <li>İlana uygunluk analizi ve ön yazı</li>
+          <li>Eski CV’ni (PDF, Word) içe aktarma</li>
+          <li>Veriler yalnızca senin tarayıcında saklanır</li>
+        </ul>
+        <p><strong>Bu uygulama JavaScript gerektirir.</strong> Lütfen tarayıcında JavaScript’i etkinleştir.</p>
+      </main>
+    </noscript>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

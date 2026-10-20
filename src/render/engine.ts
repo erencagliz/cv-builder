@@ -40,7 +40,11 @@ export class TypstEngine {
       await c.init({ beforeBuild: [disableDefaultFontAssets()], getModule: () => this.compilerModule! });
       c.addSource('/main.typ', template);
       this.compiler = c;
-    })();
+    })().catch((e) => {
+      // başarısız denemeyi önbellekte tutma: bir sonraki çağrı yeniden dener
+      this.ready = undefined;
+      throw e;
+    });
     return this.ready;
   }
 

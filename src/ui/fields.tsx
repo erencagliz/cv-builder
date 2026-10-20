@@ -1,6 +1,7 @@
 import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
 import type { DateRange, Lang } from '../model/types';
-import { bulletHints } from '../ats/writing';
+import { STRONG_VERBS } from '../ats/writing';
+import { scoreBullet } from '../ats/report';
 import { ExamplePicker } from './ExamplePicker';
 import { maskPhone, isCompletePhone } from '../model/links';
 
@@ -574,7 +575,7 @@ export function BulletsEditor({
       >
         <Icon name="plus" /> Madde ekle
       </button>
-      {examples && <ExamplePicker onPick={(t) => onChange([...items.filter((x) => x.trim()), t])} />}
+      {examples && lang === 'tr' && <ExamplePicker onPick={(t) => onChange([...items.filter((x) => x.trim()), t])} />}
       </div>
       {items.some(long) ? <p className="field-error soft">Bazı maddeler çok uzun. 1-2 satırı geçmeyen maddeler daha kolay okunur.</p> : hint ? <p className="field-hint">{hint}</p> : null}
     </div>
@@ -669,12 +670,16 @@ const PATHS: Record<string, string> = {
   eye: 'M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12zM12 15a3 3 0 100-6 3 3 0 000 6z',
   eyeoff: 'M3 3l18 18M10.6 5.1A10 10 0 0112 5c6.5 0 10 7 10 7a17 17 0 01-3.2 4.2M6.6 6.6A17 17 0 002 12s3.5 7 10 7a9.7 9.7 0 005.4-1.6M9.9 9.9a3 3 0 004.2 4.2',
   copy: 'M9 9h10v10H9zM5 15V5h10',
+  briefcase: 'M3 8h18v12H3zM8 8V5h8v3M3 13h18',
+  share: 'M18 8a3 3 0 100-6 3 3 0 000 6zM6 15a3 3 0 100-6 3 3 0 000 6zM18 22a3 3 0 100-6 3 3 0 000 6zM8.6 13.5l6.8 4M15.4 6.5l-6.8 4',
+  qr: 'M3 3h7v7H3zM14 3h7v7h-7zM3 14h7v7H3zM14 14h3v3h-3zM18 18h3v3h-3zM18 14h3M14 18v3',
   trash: 'M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3',
   undo: 'M9 14L4 9l5-5M4 9h11a5 5 0 010 10h-3',
   redo: 'M15 14l5-5-5-5M20 9H9a5 5 0 000 10h3',
   download: 'M12 4v11M7 10l5 5 5-5M5 20h14',
   upload: 'M12 20V9M7 14l5-5 5 5M5 4h14',
   chevron: 'M9 6l6 6-6 6',
+  arrow: 'M5 12h14M13 6l6 6-6 6',
   edit: 'M4 20h4L19 9l-4-4L4 16v4z',
   back: 'M15 6l-6 6 6 6',
   globe: 'M12 3a9 9 0 100 18 9 9 0 000-18zM3 12h18M12 3c2.5 2.6 3.8 5.6 3.8 9s-1.3 6.4-3.8 9c-2.5-2.6-3.8-5.6-3.8-9S9.5 5.6 12 3z',
@@ -705,21 +710,23 @@ export function Icon({ name, size = 16 }: { name: keyof typeof PATHS | string; s
 }
 
 function BulletHintList({ text, lang }: { text: string; lang: Lang }) {
-  const hints = bulletHints(text, lang).slice(0, 2);
-  if (!hints.length)
-    return (
-      <p className="bullet-hint good">
-        <Icon name="check" size={12} /> Güçlü bir madde.
-      </p>
-    );
+  const r = scoreBullet(text, lang);
+  const tone = r.score >= 80 ? 'good' : r.score >= 60 ? 'mid' : 'low';
+  const weak = r.verb === 'weak' || r.verb === 'passive';
   return (
     <div className="bullet-hints" aria-live="polite">
-      {hints.map((h) => (
-        <p key={h.kind} className="bullet-hint">
-          <Icon name="info" size={12} /> {h.text}
-          {h.suggestions && <span className="verbs">{h.suggestions.slice(0, 6).join(' · ')}</span>}
+      <p className={`bullet-hint scored ${tone}`}>
+        <span className="b-score" title="Madde puanı (ATS kontrolündeki ölçütlerle)">
+          {r.score}
+        </span>
+        {r.tips.length ? r.tips[0] : 'Güçlü bir madde: eylem, ölçü ve sonuç var.'}
+      </p>
+      {r.tips[1] && (
+        <p className="bullet-hint">
+          <Icon name="info" size={12} /> {r.tips[1]}
         </p>
-      ))}
+      )}
+      {weak && <p className="bullet-hint"><span className="verbs">{STRONG_VERBS[lang].flatMap((g) => g.verbs).slice(0, 8).join(' · ')}</span></p>}
     </div>
   );
 }

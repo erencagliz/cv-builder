@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { CV } from '../model/types';
 import { buildModel, buildLetterModel } from '../render/buildModel';
-import { renderSvg, dataUrlToBytes } from '../render/client';
+import { renderSvg, dataUrlToBytes, useEngineStatus, initEngine } from '../render/client';
 import { Icon } from '../ui/fields';
 
 interface Page {
@@ -43,6 +43,7 @@ export function Preview({
   const wrapRef = useRef<HTMLDivElement>(null);
   const inflight = useRef(false);
   const queued = useRef<(CV & { __letter?: boolean }) | null>(null);
+  const engine = useEngineStatus();
   const photoCache = useRef<{ url: string; bytes: Uint8Array | null }>({ url: '', bytes: null });
 
   // Ekran genişliğine sığdır
@@ -112,7 +113,7 @@ export function Preview({
     <div className="preview" ref={wrapRef}>
       <div className="preview-bar">
         <span className={`status${busy ? ' busy' : ''}${error ? ' err' : ''}`} aria-live="polite">
-          {firstLoad ? 'Dizgi motoru yükleniyor…' : error ? 'Önizleme hatası' : busy ? 'Güncelleniyor…' : `${pages.length} sayfa`}
+          {firstLoad ? (engine.total ? `Dizgi motoru yükleniyor… %${Math.min(99, Math.round((engine.loaded / engine.total) * 100))}` : 'Dizgi motoru yükleniyor…') : error ? 'Önizleme hatası' : busy ? 'Güncelleniyor…' : `${pages.length} sayfa`}
         </span>
         {pages.length > 1 && !firstLoad && !letter && onFit && (
           <button type="button" className="btn ghost sm" onClick={onFit} disabled={fitting} title="Yazı boyutunu ve boşlukları okunabilir sınırlar içinde küçültür">
@@ -142,12 +143,33 @@ export function Preview({
               <span style={{ width: '100%' }} />
               <span style={{ width: '92%' }} />
             </div>
-            <p className="sk-note">Dizgi motoru ilk açılışta indiriliyor, sonraki açılışlar anında olur.</p>
+            <div className="sk-progress" role="progressbar" aria-label="Dizgi motoru indiriliyor" aria-valuemin={0} aria-valuemax={100} aria-valuenow={engine.total ? Math.round((engine.loaded / engine.total) * 100) : 0}>
+              <span style={{ width: `${engine.total ? Math.min(100, (engine.loaded / engine.total) * 100) : 4}%` }} />
+            </div>
+            <p className="sk-note">
+              {engine.total && engine.loaded < engine.total
+                ? `Dizgi motoru indiriliyor: ${(engine.loaded / 1048576).toFixed(1).replace('.', ',')} / ${(engine.total / 1048576).toFixed(1).replace('.', ',')} MB. Yalnızca ilk açılışta; sonra internetsiz de çalışır.`
+                : 'Dizgi motoru hazırlanıyor. Yalnızca ilk açılışta sürer; sonra internetsiz de çalışır.'}
+            </p>
           </div>
         )}
         {error && (
           <div className="note warn preview-error" role="alert">
-            <Icon name="alert" size={14} /> {error}
+            <Icon name="alert" size={14} /> {engine.state === 'error' ? 'Dizgi motoru yüklenemedi. İnternet bağlantını kontrol et.' : error}
+            {engine.state === 'error' && (
+              <button
+                type="button"
+                className="btn ghost sm"
+                onClick={() => {
+                  setFirstLoad(true);
+                  initEngine()
+                    .then(() => run({ ...cv, __letter: letter }))
+                    .catch(() => setFirstLoad(false));
+                }}
+              >
+                Yeniden dene
+              </button>
+            )}
           </div>
         )}
         {pages.map((p, i) => (

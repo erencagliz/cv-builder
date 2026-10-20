@@ -94,3 +94,65 @@ export function sampleCV(): CV {
   cv.references.onRequest = true;
   return cv;
 }
+
+/** İngilizce arayüzle gelen kullanıcılar için İngilizce örnek CV (kurgusal kişi). */
+export function sampleCVEn(): CV {
+  const cv = sampleCV();
+  cv.name = 'Sample CV – IT';
+  cv.lang = 'en';
+  cv.international = true;
+  cv.personal = {
+    ...cv.personal,
+    firstName: 'Alex',
+    lastName: 'Morgan',
+    title: 'IT Specialist',
+    email: 'alex.morgan@example.com',
+    phone: '+44 7700 900123',
+    location: 'Manchester, UK',
+    birthDate: '',
+    military: '',
+    militaryDate: '',
+    licenses: [],
+    licenseYear: '',
+    travel: '',
+  };
+  cv.links = [
+    { id: uid(), type: 'linkedin', value: 'alexmorgan', label: '' },
+    { id: uid(), type: 'github', value: 'alexmorgan', label: '' },
+  ];
+  cv.summary =
+    'IT Specialist with 6 years of experience in corporate environments. Managed **Active Directory**, Group Policy and end-user support for 250 users. Focused on automating routine work to reduce support tickets and keep systems running without interruption.';
+  const [a, b, c] = cv.sections.experience;
+  Object.assign(a, {
+    position: 'IT Specialist',
+    company: 'Northwind Logistics Ltd',
+    location: 'Manchester',
+    bullets: [
+      'Managed Active Directory and Group Policy for 250 users; cut new-starter account setup from 1 day to 2 hours.',
+      'Automated software deployment with PowerShell scripts, reducing monthly support tickets by 35%.',
+      'Installed and maintained printers, IP phones and peripherals across 3 sites.',
+      'Redesigned the backup policy with monthly restore tests, eliminating the risk of data loss.',
+    ],
+  });
+  Object.assign(b, {
+    position: 'IT Support Specialist',
+    company: 'Northwind Logistics Ltd',
+    location: 'Manchester',
+    bullets: ['Resolved an average of 30 end-user requests per day within SLA.', 'Moved asset tracking from Excel to GLPI, giving one view of 400 devices.'],
+  });
+  Object.assign(c, {
+    position: 'IT Intern',
+    company: 'Blue Software',
+    location: 'Leeds',
+    bullets: ['Set up computers, carried out routine maintenance and network cabling for 40 staff.'],
+  });
+  Object.assign(cv.sections.education[0], { school: 'University of Salford', degree: 'associate', field: 'Computer Programming', location: 'Salford', gpa: '', gpaScale: '' });
+  cv.sections.skills[0].name = 'Systems';
+  cv.sections.skills[1].name = 'Networking';
+  cv.sections.skills[2].name = 'Tools';
+  cv.sections.languages = [
+    newEntry({ language: 'English', level: 'native', exam: '', score: '' }),
+    newEntry({ language: 'Spanish', level: 'B2', exam: 'DELE', score: 'B2' }),
+  ];
+  return cv;
+}

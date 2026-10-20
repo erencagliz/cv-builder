@@ -10,6 +10,9 @@
     "preview": "vite preview",
     "test": "vite-node scripts/test-turkish.ts",
     "test:e2e": "node scripts/e2e.mjs",
+    "test:ats": "vite-node scripts/report-test.ts",
+    "test:import": "vite-node scripts/import-test.ts",
+    "test:share": "vite-node scripts/share-test.ts",
     "fonts": "python3 scripts/build-fonts.py"
   },
   "dependencies": {
@@ -22,8 +25,10 @@
     "dexie": "^4.4.6",
     "docx": "^9.5.1",
     "immer": "^11.1.21",
+    "jszip": "^3.10.2",
     "nanoid": "^6.0.2",
     "pdfjs-dist": "^6.3.289",
+    "qrcode-generator": "^2.0.4",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "zustand": "^5.0.15"

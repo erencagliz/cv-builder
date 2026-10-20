@@ -1,18 +1,14 @@
+import { downloadBackup } from '../store/backup';
 import { useState } from 'react';
 import { CONTACT_EMAIL } from '../config';
-import { wipeAll, listCVs } from '../store/db';
-import { exportNative } from '../model/io';
-import { downloadBlob, useToast } from '../ui/app';
+import { wipeAll } from '../store/db';
+import { useToast } from '../ui/app';
 import { Icon } from '../ui/fields';
 
 export function PrivacyModal({ onClose }: { onClose: () => void }) {
   const toast = useToast();
   const [confirm, setConfirm] = useState(false);
-  const exportAll = async () => {
-    const rows = await listCVs();
-    const data = rows.map((r) => JSON.parse(exportNative(r.data)));
-    downloadBlob(new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }), 'tum-cvlerim.json');
-  };
+  const exportAll = () => downloadBackup();
   return (
     <div className="modal-back" onClick={onClose}>
       <div className="modal prose-modal" role="dialog" aria-modal="true" aria-label="Gizlilik ve verilerim" onClick={(e) => e.stopPropagation()}>
@@ -22,7 +18,7 @@ export function PrivacyModal({ onClose }: { onClose: () => void }) {
             <Icon name="x" />
           </button>
         </div>
-        <p className="lede-sm">Kısaca: CV’ne yazdığın bilgiler cihazından çıkmaz. Sunucu, veritabanı veya çerez yok.</p>
+        <p className="lede-sm">Kısaca: CV’ne yazdığın bilgiler cihazından çıkmaz. Hesap, veritabanı veya çerez yok.</p>
         <h3>Hangi veriler, nerede tutuluyor?</h3>
         <p>
           Girdiğin ad, iletişim bilgileri, deneyim, eğitim, fotoğraf ve diğer tüm CV içerikleri yalnızca kullandığın tarayıcının yerel depolama alanında (IndexedDB) saklanır. PDF dosyası da
@@ -30,8 +26,17 @@ export function PrivacyModal({ onClose }: { onClose: () => void }) {
         </p>
         <p>Uygulamanın çalışması için indirilen dosyalar (program kodu, yazı tipleri, PDF dizgi motoru) yalnızca bu sitenin kendi sunucusundan gelir; Google Fonts gibi dış servisler kullanılmaz.</p>
 
+        <h3>Paylaşım bağlantıları</h3>
+        <p>
+          “Paylaş” ile oluşturduğun bağlantıda CV’n adresin “#” işaretinden sonraki kısmına sıkıştırılarak yazılır. Bu kısım tarayıcılar tarafından hiçbir sunucuya gönderilmez; CV’n yalnızca
+          bağlantıyı verdiğin kişinin tarayıcısında açılır. Bağlantıyı kime verdiğine dikkat et: bağlantıya sahip herkes CV’ni görebilir.
+        </p>
+
         <h3>Çerezler ve analiz</h3>
-        <p>Çerez kullanılmaz. Reklam, takip veya profil çıkarma amaçlı hiçbir araç yoktur. Yalnızca tema tercihin (aydınlık/karanlık) tarayıcında saklanır.</p>
+        <p>
+          Çerez kullanılmaz. Reklam, takip veya profil çıkarma amaçlı hiçbir araç yoktur. Site, yalnızca sayfa ziyaret sayısını ölçen, çerez kullanmayan ve kimseyi tanımlamayan anonim bir sayaç
+          (Vercel Web Analytics) kullanabilir; bu sayaca CV içeriğin asla gönderilmez. Tema tercihin ve “hoş geldin” notunun kapatıldığı bilgisi tarayıcında saklanır.
+        </p>
 
         <h3>6698 sayılı KVKK kapsamındaki haklar</h3>
         <p>
@@ -47,7 +52,7 @@ export function PrivacyModal({ onClose }: { onClose: () => void }) {
         <h3>Verilerini yönet</h3>
         <div className="row-actions">
           <button className="btn ghost" onClick={exportAll}>
-            Tüm CV’lerimi indir (.json)
+            Tüm CV’lerimi ve başvurularımı yedekle (.json)
           </button>
           {confirm ? (
             <>

@@ -23,7 +23,7 @@ const watch = (p) => {
 };
 
 // ================= Masaüstü =================
-const ctx = await b.newContext({ viewport: { width: 1440, height: 1000 }, acceptDownloads: true, locale: 'tr-TR' });
+const ctx = await b.newContext({ locale: 'tr-TR',  viewport: { width: 1440, height: 1000 }, acceptDownloads: true, locale: 'tr-TR' });
 const p = await ctx.newPage();
 watch(p);
 await p.goto(BASE + '/');
@@ -190,7 +190,7 @@ await p.close();
 
 // ================= Telefon =================
 console.log('7) Telefonda baştan sona');
-const mctx = await b.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, acceptDownloads: true, locale: 'tr-TR' });
+const mctx = await b.newContext({ locale: 'tr-TR',  viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, acceptDownloads: true, locale: 'tr-TR' });
 const m = await mctx.newPage();
 watch(m);
 await m.goto(BASE + '/');

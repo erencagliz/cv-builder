@@ -2,7 +2,7 @@ import { chromium } from 'playwright';
 import fs from 'fs';
 const out = '/tmp/claude-0/e2e'; fs.mkdirSync(out, { recursive: true });
 const browser = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium' }).catch(() => chromium.launch());
-const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 }, acceptDownloads: true });
+const ctx = await browser.newContext({ locale: 'tr-TR', viewport: { width: 1440, height: 900 }, acceptDownloads: true });
 const page = await ctx.newPage();
 const errors = [];
 page.on('pageerror', (e) => errors.push('pageerror: ' + e.message));

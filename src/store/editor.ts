@@ -1,7 +1,8 @@
 import { create } from 'zustand';
 import { produce, type Draft } from 'immer';
 import type { CV } from '../model/types';
-import { saveCV, maybeSnapshot } from './db';
+import { saveCV, maybeSnapshot, pruneSnapshots } from './db';
+import { requestPersistence } from '../ui/selfheal';
 
 const HISTORY_LIMIT = 200;
 const GROUP_MS = 600; // bu süre içindeki ardışık değişiklikler tek geri-al adımıdır
@@ -30,13 +31,20 @@ export const useEditor = create<EditorState>((set, get) => {
     saveTimer = setTimeout(async () => {
       const cv = get().cv;
       if (!cv) return;
-      try {
-        await saveCV(cv);
-        await maybeSnapshot(cv);
-        set({ saveState: 'saved' });
-      } catch {
-        set({ saveState: 'error' });
+      // kendi kendini onarma: kayıt başarısızsa artan aralıklarla yeniden dene; sürüm geçmişi kaydı asıl kaydı engellemesin
+      for (let attempt = 0; attempt < 4; attempt++) {
+        try {
+          await saveCV(get().cv ?? cv);
+          set({ saveState: 'saved' });
+          requestPersistence();
+          maybeSnapshot(get().cv ?? cv).catch(() => pruneSnapshots().catch(() => {}));
+          return;
+        } catch {
+          if (attempt === 0) await pruneSnapshots().catch(() => {}); // yer açmayı dene
+          await new Promise((r) => setTimeout(r, 1500 * (attempt + 1)));
+        }
       }
+      set({ saveState: 'error' });
     }, 500);
   };
 

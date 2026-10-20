@@ -12,7 +12,7 @@ import { DesignPanel } from './DesignPanel';
 import { Wizard } from './Wizard';
 import { CvManager } from './CvManager';
 import { PrivacyModal } from './PrivacyModal';
-import { WELCOME_NAME } from './Home';
+import { WELCOME_NAMES } from './Home';
 import { emptyCV } from '../model/defaults';
 import { LetterPanel } from './LetterPanel';
 import { AtsView, JobMatchView } from './Insights';
@@ -20,6 +20,10 @@ import { fitToOnePage } from './fit';
 import { buildLetterModel } from '../render/buildModel';
 import { countPages } from '../render/client';
 import { Preview } from './Preview';
+import { useFocus } from '../store/focus';
+import { uiLang, setUiLang, uiLocale } from '../i18n';
+import { Applications } from './Applications';
+import { ShareDrawer } from '../share/ShareDrawer';
 import { Icon } from '../ui/fields';
 import { downloadBlob, navigate, useToast, ThemeToggle } from '../ui/app';
 import { APP_NAME } from '../config';
@@ -64,13 +68,13 @@ function Editor({ cv }: { cv: CV }) {
   const [tab, setTab] = useState<'wizard' | 'content' | 'design' | 'letter'>('wizard');
   const [view, setView] = useState<'preview' | 'ats' | 'job'>('preview');
   const [fitting, setFitting] = useState(false);
-  const [manager, setManager] = useState<null | 'list' | 'new' | 'samples' | 'linkedin'>(null);
+  const [manager, setManager] = useState<null | 'list' | 'new' | 'samples' | 'linkedin' | 'import'>(null);
   const [privacy, setPrivacy] = useState(false);
   const [welcome, setWelcome] = useState(() => {
     try {
-      return cv.name === WELCOME_NAME && localStorage.getItem('welcomed') !== '1';
+      return WELCOME_NAMES.has(cv.name) && localStorage.getItem('welcomed') !== '1';
     } catch {
-      return cv.name === WELCOME_NAME;
+      return WELCOME_NAMES.has(cv.name);
     }
   });
   const dismissWelcome = () => {
@@ -83,6 +87,14 @@ function Editor({ cv }: { cv: CV }) {
   };
   const liInput = useRef<HTMLInputElement>(null);
   const [mobileView, setMobileView] = useState<'edit' | 'preview'>('edit');
+  const focusReq = useFocus((s) => s.req);
+  const drawer = useFocus((s) => s.drawer);
+  const openDrawer = useFocus((s) => s.openDrawer);
+  useEffect(() => {
+    if (!focusReq) return;
+    setTab('content');
+    setMobileView('edit');
+  }, [focusReq]);
   const [exporting, setExporting] = useState(false);
   const [menu, setMenu] = useState(false);
   const [history, setHistory] = useState<SnapshotRow[] | null>(null);
@@ -241,10 +253,23 @@ function Editor({ cv }: { cv: CV }) {
         <button className="btn ghost cvs-btn" onClick={() => setManager('list')} title="CV’lerim, yeni CV, örnekler">
           <Icon name="files" /> <span className="hide-sm">CV’lerim</span>
         </button>
+        <button className="btn ghost cvs-btn apps-btn" onClick={() => openDrawer('apps')} title="Başvurularını takip et">
+          <Icon name="briefcase" /> <span className="hide-md">Başvurular</span>
+        </button>
         <input className="doc-name" aria-label="CV adı (yalnızca senin için)" value={cv.name} onChange={(e) => update((d) => void (d.name = e.target.value), 'name')} />
-        <span className={`save-state ${saveState}`} aria-live="polite">
-          {saveState === 'saving' ? 'Kaydediliyor…' : saveState === 'error' ? 'Kaydedilemedi' : 'Kaydedildi'}
-        </span>
+        {saveState === 'error' ? (
+          <button
+            className="save-state error as-btn"
+            title="Tarayıcı kaydetmeye izin vermedi (gizli pencere veya dolu depolama olabilir). Verin kaybolmasın diye yedeğini indir."
+            onClick={() => downloadBlob(new Blob([exportNative(cv)], { type: 'application/json' }), fileName(cv, 'json'))}
+          >
+            Kaydedilemedi · yedeği indir
+          </button>
+        ) : (
+          <span className={`save-state ${saveState}`} aria-live="polite">
+            {saveState === 'saving' ? 'Kaydediliyor…' : 'Kaydedildi'}
+          </span>
+        )}
         <div className="topbar-group">
           <button className="icon-btn" aria-label="Geri al" title="Geri al (Ctrl+Z)" disabled={!past.length} onClick={undo}>
             <Icon name="undo" />
@@ -287,6 +312,25 @@ function Editor({ cv }: { cv: CV }) {
             <>
               <div className="menu-backdrop" onClick={() => setMenu(false)} />
               <div className="menu" role="menu">
+                <button
+                  role="menuitem"
+                  onClick={() => {
+                    setMenu(false);
+                    openDrawer('share');
+                  }}
+                >
+                  <Icon name="share" /> Paylaş / telefona taşı
+                </button>
+                <button
+                  role="menuitem"
+                  onClick={() => {
+                    setMenu(false);
+                    openDrawer('apps');
+                  }}
+                >
+                  <Icon name="briefcase" /> Başvurularım
+                </button>
+                <hr />
                 <button role="menuitem" onClick={copyTxt}>
                   <Icon name="copy" /> CV metnini kopyala
                 </button>
@@ -320,6 +364,15 @@ function Editor({ cv }: { cv: CV }) {
                 >
                   <Icon name="linkedin" /> LinkedIn PDF’inden doldur
                 </button>
+                <button
+                  role="menuitem"
+                  onClick={() => {
+                    setMenu(false);
+                    setManager('import');
+                  }}
+                >
+                  <Icon name="upload" /> Eski CV’mi yükle (PDF, Word)
+                </button>
                 <hr />
                 <button role="menuitem" onClick={duplicate}>
                   <Icon name="copy" /> CV’yi çoğalt
@@ -338,12 +391,18 @@ function Editor({ cv }: { cv: CV }) {
                   <Icon name="shield" /> Gizlilik ve verilerim
                 </button>
                 <ThemeToggle asMenuItem />
+                <button role="menuitem" data-no-i18n onClick={() => flushSave().then(() => setUiLang(uiLang() === 'tr' ? 'en' : 'tr'))}>
+                  <Icon name="globe" /> {uiLang() === 'tr' ? 'Interface: English' : 'Arayüz: Türkçe'}
+                </button>
               </div>
             </>
           )}
           <input ref={fileInput} type="file" accept="application/json,.json" hidden onChange={(e) => e.target.files?.[0] && importFile(e.target.files[0])} />
           <input ref={liInput} type="file" accept="application/pdf,.pdf" hidden onChange={(e) => e.target.files?.[0] && importLinkedIn(e.target.files[0])} />
         </div>
+        <button className="btn ghost share-btn" onClick={() => openDrawer('share')} title="Bağlantıyla paylaş veya telefonuna taşı" aria-label="Paylaş">
+          <Icon name="share" /> <span className="hide-md">Paylaş</span>
+        </button>
         <button className="btn primary" onClick={downloadPdf} disabled={exporting || !!status.error}>
           <Icon name="download" /> {exporting ? 'Hazırlanıyor…' : 'PDF indir'}
         </button>
@@ -375,12 +434,15 @@ function Editor({ cv }: { cv: CV }) {
                   <button
                     className="btn primary sm"
                     onClick={() => {
-                      replace({ ...emptyCV('CV’m'), id: cv.id, createdAt: cv.createdAt });
+                      replace({ ...emptyCV(uiLang() === 'en' ? 'My CV' : 'CV’m'), lang: uiLang(), id: cv.id, createdAt: cv.createdAt });
                       dismissWelcome();
                       toast('Boş CV ile başladın. Geri almak için Ctrl+Z.');
                     }}
                   >
                     Boş başla
+                  </button>
+                  <button className="btn ghost sm" onClick={() => setManager('import')}>
+                    <Icon name="upload" /> Eski CV’mi yükle
                   </button>
                   <button className="btn ghost sm" onClick={() => setManager('linkedin')}>
                     <Icon name="linkedin" /> LinkedIn’den doldur
@@ -436,12 +498,14 @@ function Editor({ cv }: { cv: CV }) {
           Düzenle
         </button>
         <button className={mobileView === 'preview' ? 'on' : ''} onClick={() => setMobileView('preview')}>
-          Önizle {status.pages ? `· ${status.pages} sayfa` : ''}
+          {status.pages ? `Önizle · ${status.pages} sayfa` : 'Önizle'}
         </button>
       </nav>
 
       {manager && <CvManager currentId={cv.id} startTab={manager} onClose={() => setManager(null)} />}
       {privacy && <PrivacyModal onClose={() => setPrivacy(false)} />}
+      {drawer === 'apps' && <Applications currentCvId={cv.id} onClose={() => openDrawer(null)} />}
+      {drawer === 'share' && <ShareDrawer cv={cv} onClose={() => openDrawer(null)} />}
       {history && (
         <div className="modal-back" onClick={() => setHistory(null)}>
           <div className="modal" role="dialog" aria-modal="true" aria-label="Sürüm geçmişi" onClick={(e) => e.stopPropagation()}>
@@ -458,7 +522,7 @@ function Editor({ cv }: { cv: CV }) {
               <ul className="history">
                 {history.map((h) => (
                   <li key={h.id}>
-                    <span>{new Date(h.at).toLocaleString('tr-TR', { dateStyle: 'medium', timeStyle: 'short' })}</span>
+                    <span>{new Date(h.at).toLocaleString(uiLocale(), { dateStyle: 'medium', timeStyle: 'short' })}</span>
                     <span className="muted">
                       {[h.data.personal.firstName, h.data.personal.lastName].join(' ').trim() || 'Adsız'} · {h.data.sections.experience.length} deneyim
                     </span>

@@ -1,4 +1,6 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { uiLang } from '../i18n';
+import { useFocus } from '../store/focus';
 import type { Draft } from 'immer';
 import type { CV, Entry, SectionKey, EntrySectionKey, DateRange } from '../model/types';
 import { SECTION_MAP, CUSTOM_FIELDS, isStandardTitle, type FieldDef } from '../model/sections';
@@ -28,11 +30,22 @@ import { sectionIconId } from '../render/iconSvg';
 
 type Update = (fn: (d: Draft<CV>) => void, key?: string) => void;
 
+/** Aynı odak isteğinin panel yeniden açıldığında tekrar uygulanmaması için */
+const handled = { section: 0, entry: 0 };
+
 /* ======================================================================= */
 export function ContentPanel({ cv }: { cv: CV }) {
   const update = useEditor((s) => s.update);
   const [open, setOpen] = useState<Record<string, boolean>>({ header: true });
   const toggle = (k: string) => setOpen((o) => ({ ...o, [k]: !o[k] }));
+  const req = useFocus((s) => s.req);
+  useEffect(() => {
+    if (!req || req.n === handled.section) return;
+    handled.section = req.n;
+    setOpen((o) => ({ ...o, [req.section]: true }));
+    if (req.entryId) return; // girdiye EntryList kaydırır
+    setTimeout(() => document.querySelector(`[data-sec="${req.section}"]`)?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 60);
+  }, [req]);
 
   return (
     <div className="content-panel">
@@ -79,7 +92,7 @@ export function HeaderCard({ cv, update, open, onToggle }: { cv: CV; update: Upd
   const emailErr = touched.email && p.email && !isValidEmail(p.email) ? 'E-posta adresi eksik görünüyor (ör. ad@ornek.com).' : undefined;
   const fullName = [p.firstName, p.lastName].filter(Boolean).join(' ');
   return (
-    <section className={`card${open ? ' open' : ''}`}>
+    <section className={`card${open ? ' open' : ''}`} data-sec="header">
       <button type="button" className="card-head" onClick={onToggle} aria-expanded={open}>
         <span className="card-title">Ad, iletişim ve fotoğraf</span>
         <span className="card-meta">{fullName || 'Ad soyad girilmedi'}</span>
@@ -309,7 +322,7 @@ export function SectionCard({
     }, `title.${sectionKey}`);
 
   return (
-    <section className={`card section-card${open ? ' open' : ''}${hidden ? ' is-hidden' : ''}`}>
+    <section className={`card section-card${open ? ' open' : ''}${hidden ? ' is-hidden' : ''}`} data-sec={sectionKey}>
       <div className="card-head-row">
         {handle ? <DragHandle handle={handle} label={`${title} bölümünü taşı`} /> : <span className="handle-space" />}
         <IconPicker
@@ -493,6 +506,18 @@ function EntryList({
   updateField: (i: number, key: string, value: unknown, id: string) => void;
 }) {
   const [openId, setOpenId] = useState<string | null>(items.length === 1 ? items[0].id : null);
+  const req = useFocus((s) => s.req);
+  useEffect(() => {
+    if (!req?.entryId || req.n === handled.entry || !items.some((e) => e.id === req.entryId)) return;
+    handled.entry = req.n;
+    setOpenId(req.entryId);
+    setTimeout(() => {
+      const el = document.querySelector<HTMLElement>(`[data-entry="${req.entryId}"]`);
+      el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      el?.classList.add('flash');
+      setTimeout(() => el?.classList.remove('flash'), 1600);
+    }, 80);
+  }, [req, items]);
   return (
     <div className="entries">
       <SortableList
@@ -501,9 +526,9 @@ function EntryList({
         onReorder={(next) => mutate((list) => void list.splice(0, list.length, ...(next as Draft<Entry>[])))}
         render={(e, handle, i) => {
           const isOpen = openId === e.id;
-          const dates = e.dates ? formatRange(e.dates, 'MMM YYYY', 'tr') : typeof e.date === 'string' ? formatRange({ start: e.date, end: '', current: false }, 'MMM YYYY', 'tr') : '';
+          const dates = e.dates ? formatRange(e.dates, 'MMM YYYY', uiLang()) : typeof e.date === 'string' ? formatRange({ start: e.date, end: '', current: false }, 'MMM YYYY', uiLang()) : '';
           return (
-            <div className={`entry${isOpen ? ' open' : ''}`}>
+            <div className={`entry${isOpen ? ' open' : ''}`} data-entry={e.id}>
               <div className="entry-head">
                 <DragHandle handle={handle} label="Öğeyi taşı" />
                 <button type="button" className="entry-toggle" onClick={() => setOpenId(isOpen ? null : e.id)} aria-expanded={isOpen}>

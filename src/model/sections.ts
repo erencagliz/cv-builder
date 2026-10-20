@@ -74,7 +74,7 @@ export const SKILL_LEVELS = [
   { value: 'expert', label: 'Uzman' },
   { value: 'advanced', label: 'İleri' },
   { value: 'intermediate', label: 'Orta' },
-  { value: 'beginner', label: 'Başlangıç' },
+  { value: 'beginner', label: 'Temel' },
 ];
 
 const range: FieldDef = { key: 'dates', label: 'Tarihler', type: 'range', wide: true };
@@ -163,7 +163,7 @@ export const SECTION_DEFS: SectionDef[] = [
     description: 'Sınav puanın varsa ekle; işverenler sayıya güvenir.',
     kind: 'entries',
     addLabel: 'Dil ekle',
-    summary: (e) => join(e.language, e.level),
+    summary: (e) => join(e.language, LANGUAGE_LEVELS.find((l) => l.value === e.level && l.value)?.label ?? ''),
     fields: [
       { key: 'language', label: 'Dil', type: 'text', placeholder: 'İngilizce' },
       { key: 'level', label: 'Seviye', type: 'select', options: LANGUAGE_LEVELS },
@@ -365,4 +365,4 @@ export const STANDARD_TITLES = new Set(
   ].map((t) => t.toLocaleLowerCase('tr-TR')),
 );
 
-export const isStandardTitle = (t: string) => STANDARD_TITLES.has(t.trim().toLocaleLowerCase('tr-TR'));
+export const isStandardTitle = (t: string) => STANDARD_TITLES.has(t.trim().toLocaleLowerCase('tr-TR')) || STANDARD_TITLES.has(t.trim().toLowerCase());

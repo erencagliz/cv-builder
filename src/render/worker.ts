@@ -4,14 +4,54 @@ import rendererWasmUrl from '@myriaddreamin/typst-ts-renderer/pkg/typst_ts_rende
 import { TypstEngine } from './engine';
 import type { RenderModel } from './buildModel';
 
+declare const __COMPILER_WASM_SIZE__: number;
 const base = new URL(import.meta.env.BASE_URL, self.location.origin).href;
-const fetchBytes = async (url: string) => {
-  const r = await fetch(url);
-  if (!r.ok) throw new Error(`${url} yüklenemedi (${r.status})`);
-  return new Uint8Array(await r.arrayBuffer());
-};
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+/** Ağ hatasında 3 kez dener; ikinci denemeden sonra tarayıcı önbelleğini atlar (bozuk önbellek kaydı için). */
+async function fetchBytes(url: string, progress = false): Promise<Uint8Array> {
+  let last: unknown;
+  for (let attempt = 0; attempt < 4; attempt++) {
+    try {
+      const r = await fetch(url, attempt >= 2 ? { cache: 'reload' } : undefined);
+      if (!r.ok) throw new Error(`${url} yüklenemedi (${r.status})`);
+      if (!progress || !r.body) return new Uint8Array(await r.arrayBuffer());
+      // sıkıştırılmış yanıtta Content-Length sıkıştırılmış boyuttur; gerçek boyutu derleme anında biliyoruz
+      const len = Number(r.headers.get('content-length')) || 0;
+      const total = r.headers.get('content-encoding') || !len ? __COMPILER_WASM_SIZE__ : len;
+      const reader = r.body.getReader();
+      const chunks: Uint8Array[] = [];
+      let loaded = 0;
+      let lastPost = 0;
+      for (;;) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        chunks.push(value);
+        loaded += value.length;
+        const now = Date.now();
+        if (now - lastPost > 120) {
+          lastPost = now;
+          self.postMessage({ type: 'progress', loaded, total: Math.max(total, loaded) });
+        }
+      }
+      self.postMessage({ type: 'progress', loaded, total: loaded });
+      const out = new Uint8Array(loaded);
+      let o = 0;
+      for (const c of chunks) {
+        out.set(c, o);
+        o += c.length;
+      }
+      return out;
+    } catch (e) {
+      last = e;
+      await sleep(600 * 2 ** attempt);
+    }
+  }
+  throw last instanceof Error ? last : new Error(String(last));
+}
+
 const engine = new TypstEngine({
-  compilerWasm: () => fetchBytes(compilerWasmUrl),
+  compilerWasm: () => fetchBytes(compilerWasmUrl, true),
   rendererWasm: () => fetchBytes(rendererWasmUrl),
   loadFile: (p) => fetchBytes(base + p),
 });

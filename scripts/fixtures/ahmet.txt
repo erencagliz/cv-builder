@@ -1,0 +1,15 @@
+Ahmet Kaya
+Yazılım Geliştirici
+ahmet.kaya@gmail.com | 0532 111 22 33 | Kadıköy, İstanbul
+
+İŞ DENEYİMİ
+Kıdemli Yazılım Geliştirici | Trendyol | 03/2021 - Halen
+- Sipariş servisini mikroservislere taşıdım; yanıt süresini %40 düşürdüm.
+
+EĞİTİM
+İstanbul Teknik Üniversitesi
+Bilgisayar Mühendisliği, Lisans
+2014 - 2018
+
+YETENEKLER
+Java, Kotlin, SQL, Docker

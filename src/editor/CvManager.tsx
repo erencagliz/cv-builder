@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
+import { uiLocale, uiLang } from '../i18n';
 import type { CV } from '../model/types';
 import { listCVs, saveCV, deleteCV, getCV, type CVRow } from '../store/db';
 import { emptyCV, uid } from '../model/defaults';
 import { importAny } from '../model/io';
+import { downloadBackup, restoreBackup, BACKUP_FORMAT } from '../store/backup';
 import { PROFESSIONS } from '../content/professions';
 import { sampleFor } from '../content/gallery';
 import { buildModel } from '../render/buildModel';
@@ -46,7 +48,7 @@ function useThumbs(ids: string[], enabled: boolean) {
 }
 
 /** "CV'lerim" paneli: CV listesi ve yeni CV oluşturma yolları */
-export function CvManager({ currentId, onClose, startTab = 'list' }: { currentId: string; onClose: () => void; startTab?: 'list' | 'new' | 'samples' | 'linkedin' }) {
+export function CvManager({ currentId, onClose, startTab = 'list' }: { currentId: string; onClose: () => void; startTab?: 'list' | 'new' | 'samples' | 'linkedin' | 'import' }) {
   const [rows, setRows] = useState<CVRow[] | null>(null);
   const [tab, setTab] = useState(startTab);
   const [confirmId, setConfirmId] = useState<string | null>(null);
@@ -54,6 +56,23 @@ export function CvManager({ currentId, onClose, startTab = 'list' }: { currentId
   const toast = useToast();
   const jsonRef = useRef<HTMLInputElement>(null);
   const liRef = useRef<HTMLInputElement>(null);
+  const oldRef = useRef<HTMLInputElement>(null);
+  const [drag, setDrag] = useState(false);
+  const importOld = async (f: File) => {
+    setBusy(true);
+    try {
+      const { parseResumeFile } = await import('../import/generic');
+      const r = await parseResumeFile(f);
+      const base = f.name.replace(/\.[^.]+$/, '');
+      r.cv.name = base.length > 2 ? base.slice(0, 60) : 'İçe aktarılan CV';
+      if (r.confidence < 0.25) throw new Error('Bu dosyada CV yapısı tanınamadı. Başka bir biçimde (PDF, Word veya metin) dene ya da boş CV ile başla.');
+      await open(r.cv, `${r.kind} dosyasından alındı: ${r.found.join(', ')}. Tasarım varsayılan şablonla yeniden oluşturuldu; bilgileri kontrol et.`);
+    } catch (err) {
+      toast(err instanceof Error ? err.message : String(err), 'error');
+    } finally {
+      setBusy(false);
+    }
+  };
   const thumbs = useThumbs(
     PROFESSIONS.map((p) => p.id),
     tab === 'samples',
@@ -109,16 +128,54 @@ export function CvManager({ currentId, onClose, startTab = 'list' }: { currentId
               ['samples', 'Örnekler'],
             ] as const
           ).map(([k, l]) => (
-            <button key={k} role="tab" aria-selected={tab === k || (k === 'new' && tab === 'linkedin')} className={tab === k || (k === 'new' && tab === 'linkedin') ? 'on' : ''} onClick={() => setTab(k)}>
+            <button key={k} role="tab" aria-selected={tab === k || (k === 'new' && (tab === 'linkedin' || tab === 'import'))} className={tab === k || (k === 'new' && (tab === 'linkedin' || tab === 'import')) ? 'on' : ''} onClick={() => setTab(k)}>
               {l}
             </button>
           ))}
         </div>
 
         <div className="drawer-body">
+              <input
+                ref={jsonRef}
+                type="file"
+                accept="application/json,.json"
+                hidden
+                onChange={async (e) => {
+                  const f = e.target.files?.[0];
+                  if (!f) return;
+                  e.target.value = '';
+                  try {
+                    const text = await f.text();
+                    let parsed: any = null;
+                    try {
+                      parsed = JSON.parse(text);
+                    } catch {
+                      /* importAny anlaşılır hata verir */
+                    }
+                    if (parsed?.format === BACKUP_FORMAT) {
+                      const r = await restoreBackup(parsed);
+                      await refresh();
+                      setTab('list');
+                      toast(`${r.cvs.length} CV${r.applications ? ` ve ${r.applications} başvuru` : ''} geri yüklendi.`);
+                      return;
+                    }
+                    await open(importAny(text), 'Yedek içe aktarıldı.');
+                  } catch (err) {
+                    toast(err instanceof Error ? err.message : String(err), 'error');
+                  }
+                }}
+              />
           {tab === 'list' && (
             <>
-              <p className="muted small">CV’lerin yalnızca bu tarayıcıda saklanır. Başka cihaza taşımak için menüden yedek indir.</p>
+              <p className="muted small">CV’lerin yalnızca bu tarayıcıda saklanır. Tarayıcı verilerini temizlersen silinirler; ara sıra yedek almanı öneririz.</p>
+              <div className="backup-row">
+                <button className="btn ghost sm" onClick={() => downloadBackup().then(() => toast('Tüm CV’lerin yedeklendi.'))}>
+                  <Icon name="download" /> Tümünü yedekle
+                </button>
+                <button className="btn ghost sm" onClick={() => jsonRef.current?.click()}>
+                  <Icon name="upload" /> Yedeği geri yükle
+                </button>
+              </div>
               <ul className="cv-list one-col">
                 {(rows ?? []).map((c) => (
                   <li key={c.id} className={`cv-item${c.id === currentId ? ' current' : ''}`}>
@@ -129,7 +186,7 @@ export function CvManager({ currentId, onClose, startTab = 'list' }: { currentId
                       </span>
                       <span className="cv-meta">
                         {[c.data.personal.firstName, c.data.personal.lastName].join(' ').trim() || 'Adsız'} · {c.data.lang.toUpperCase()} ·{' '}
-                        {new Date(c.updatedAt).toLocaleString('tr-TR', { dateStyle: 'medium', timeStyle: 'short' })}
+                        {new Date(c.updatedAt).toLocaleString(uiLocale(), { dateStyle: 'medium', timeStyle: 'short' })}
                       </span>
                     </button>
                     <div className="cv-actions">
@@ -165,7 +222,7 @@ export function CvManager({ currentId, onClose, startTab = 'list' }: { currentId
 
           {tab === 'new' && (
             <div className="new-options">
-              <button className="new-opt" onClick={() => open(emptyCV(), 'Boş CV oluşturuldu.')}>
+              <button className="new-opt" onClick={() => open({ ...emptyCV(uiLang() === 'en' ? 'New CV' : 'Yeni CV'), lang: uiLang() }, 'Boş CV oluşturuldu.')}>
                 <Icon name="file" size={20} />
                 <span>
                   <strong>Boş CV</strong>
@@ -179,6 +236,13 @@ export function CvManager({ currentId, onClose, startTab = 'list' }: { currentId
                   <small>12 meslek için hazır, düzenlenebilir örnekler.</small>
                 </span>
               </button>
+              <button className="new-opt" onClick={() => setTab('import')}>
+                <Icon name="upload" size={20} />
+                <span>
+                  <strong>Eski CV’mi yükle</strong>
+                  <small>PDF, Word (.docx) veya metin; bilgiler okunup yeni tasarıma yerleşir.</small>
+                </span>
+              </button>
               <button className="new-opt" onClick={() => setTab('linkedin')}>
                 <Icon name="linkedin" size={20} />
                 <span>
@@ -190,22 +254,50 @@ export function CvManager({ currentId, onClose, startTab = 'list' }: { currentId
                 <Icon name="upload" size={20} />
                 <span>
                   <strong>Yedekten içe aktar</strong>
-                  <small>Daha önce indirdiğin .json yedeği veya JSON Resume.</small>
+                  <small>İndirdiğin .json yedeği (tek CV ya da tümü) veya JSON Resume.</small>
                 </span>
               </button>
+            </div>
+          )}
+
+          {tab === 'import' && (
+            <div className="li-help">
+              <p>
+                Elindeki CV’yi seç; ad, iletişim, deneyimler, eğitim, yetenekler ve diller otomatik ayrıştırılıp düzenlenebilir hâle gelir. Dosya bilgisayarından çıkmaz, tarayıcında okunur.
+              </p>
+              <div
+                className={`drop${drag ? ' over' : ''}`}
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  setDrag(true);
+                }}
+                onDragLeave={() => setDrag(false)}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  setDrag(false);
+                  const f = e.dataTransfer.files?.[0];
+                  if (f) importOld(f);
+                }}
+              >
+                <Icon name="upload" size={22} />
+                <span>{busy ? 'Okunuyor…' : 'Dosyayı buraya sürükle ya da'}</span>
+                <button className="btn primary" disabled={busy} onClick={() => oldRef.current?.click()}>
+                  Dosya seç
+                </button>
+                <small className="muted">PDF · Word (.docx) · .txt</small>
+              </div>
+              <p className="muted small">
+                Taranmış (resim) PDF’lerde metin olmadığı için okunamaz. Yerleşim her CV’de kusursuz olmayabilir; açıldıktan sonra “ATS kontrolü” eksikleri gösterir.
+              </p>
               <input
-                ref={jsonRef}
+                ref={oldRef}
                 type="file"
-                accept="application/json,.json"
+                accept=".pdf,.docx,.txt,.md,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain"
                 hidden
-                onChange={async (e) => {
+                onChange={(e) => {
                   const f = e.target.files?.[0];
-                  if (!f) return;
-                  try {
-                    await open(importAny(await f.text()), 'Yedek içe aktarıldı.');
-                  } catch (err) {
-                    toast(err instanceof Error ? err.message : String(err), 'error');
-                  }
+                  e.target.value = '';
+                  if (f) importOld(f);
                 }}
               />
             </div>
