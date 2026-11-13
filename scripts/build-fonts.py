@@ -1,12 +1,10 @@
-"""Kaynak TTF'leri (Google Fonts, OFL/Apache) Latin + Latin Extended alt kümesine indirger.
-Kullanım: python3 scripts/build-fonts.py <expo-google-fonts klasörü>"""
 import sys, os, json, glob
+if len(sys.argv) < 2: raise SystemExit('usage: python3 scripts/build-fonts.py <path to @expo-google-fonts>')
 from fontTools import subset
 from fontTools.ttLib import TTFont
 SRC = sys.argv[1]
 OUT = os.path.join(os.path.dirname(__file__), '..', 'public', 'fonts')
 FONTS = [
-  # id, paket, kategori
   ('roboto','roboto','sans'), ('open-sans','open-sans','sans'), ('source-sans-3','source-sans-3','sans'),
   ('ibm-plex-sans','ibm-plex-sans','sans'), ('noto-sans','noto-sans','sans'), ('carlito','carlito','sans'),
   ('inter','inter','sans'), ('fira-sans','fira-sans','sans'), ('montserrat','montserrat','sans'),
@@ -26,7 +24,7 @@ for fid, pkg, cat in FONTS:
         src = glob.glob(os.path.join(SRC, pkg, style, '*.ttf'))[0]
         f = TTFont(src); cmap = f.getBestCmap()
         miss = [c for c in REQUIRED if ord(c) not in cmap]
-        if miss: raise SystemExit(f'{fid} {style} eksik glif: {miss}')
+        if miss: raise SystemExit(f'{fid} {style} missing glyphs: {miss}')
         family = family or (f['name'].getDebugName(16) or f['name'].getDebugName(1))
         opts = subset.Options(); opts.layout_features = ['*']; opts.name_IDs = ['*']; opts.name_languages = ['*']
         opts.notdef_outline = True; opts.glyph_names = False; opts.hinting = False

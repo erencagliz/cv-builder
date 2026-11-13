@@ -1,11 +1,7 @@
-/**
- * Meslek bazlı örnek içerik. Maddelerdeki [köşeli parantezli] kısımlar kullanıcının kendi rakamıyla değiştirmesi içindir.
- * Örnek kişiler kurgusaldır.
- */
 export interface Profession {
   id: string;
-  name: string; // galeri ve seçici adı
-  title: string; // CV unvanı
+  name: string;
+  title: string;
   summary: string;
   bullets: string[];
   skills: { name: string; items: string[] }[];

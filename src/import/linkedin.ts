@@ -1,8 +1,3 @@
-/**
- * LinkedIn "PDF olarak kaydet" çıktısını ayrıştırır.
- * Düzen: solda dar sütun (İletişim, Öne çıkan yetenekler, Diller, Sertifikalar), sağda ana sütun
- * (Ad, başlık, konum, Özet, Deneyim, Eğitim). Konum ve yazı boyutuna göre çalışır; her iki dili tanır.
- */
 import type { CV } from '../model/types';
 import { emptyCV, newEntry, uid } from '../model/defaults';
 import type { PdfText } from '../ats/pdfText';
@@ -80,7 +75,6 @@ function toLines(pdf: PdfText): Line[] {
     if (!text || FOOTER.test(text)) continue;
     lines.push({ text, size, page: g.page, y: g.y, side: g.side });
   }
-  // sayfa sırası, sonra yukarıdan aşağı
   return lines.sort((a, b) => a.page - b.page || b.y - a.y);
 }
 
@@ -104,11 +98,9 @@ function sectionize(lines: Line[], heads: Record<string, Set<string>>): { pre: L
 const modeSize = (ls: Line[]) => {
   const c = new Map<number, number>();
   for (const l of ls) c.set(Math.round(l.size * 2) / 2, (c.get(Math.round(l.size * 2) / 2) ?? 0) + 1);
-  // eşitlikte küçük boyut gövde metnidir
   return [...c.entries()].sort((a, b) => b[1] - a[1] || a[0] - b[0])[0]?.[0] ?? 10;
 };
 
-/** URL'ler sütunda birden çok satıra bölünür: "(LinkedIn)" gibi etikete kadar birleştir */
 function collectUrls(lines: string[]): { url: string; label: string }[] {
   const out: { url: string; label: string }[] = [];
   for (let i = 0; i < lines.length; i++) {
@@ -136,7 +128,7 @@ const LANG_LEVEL: [RegExp, string][] = [
 
 export interface LinkedInResult {
   cv: CV;
-  found: string[]; // kullanıcıya özet
+  found: string[];
 }
 
 export function parseLinkedIn(pdf: PdfText): LinkedInResult {
@@ -152,7 +144,6 @@ export function parseLinkedIn(pdf: PdfText): LinkedInResult {
   const cv = emptyCV('LinkedIn’den içe aktarılan CV');
   const found: string[] = [];
 
-  // Ad, başlık, konum
   const pre = M.pre;
   if (pre.length) {
     const nameLine = pre.reduce((a, b) => (b.size > a.size ? b : a), pre[0]);
@@ -167,7 +158,6 @@ export function parseLinkedIn(pdf: PdfText): LinkedInResult {
     found.push('ad ve başlık');
   }
 
-  // İletişim
   const contact = (S.parts.contact ?? []).map((l) => l.text);
   const joined = contact.join(' ');
   const email = /[\w.+-]+@[\w-]+(\.[\w-]+)+/.exec(joined.replace(/\s+@\s+/, '@'));
@@ -181,7 +171,6 @@ export function parseLinkedIn(pdf: PdfText): LinkedInResult {
   }
   if (cv.personal.email || cv.links.length) found.push('iletişim bilgileri');
 
-  // Yetenekler, diller, sertifikalar, ödüller
   const skills = (S.parts.skills ?? []).map((l) => l.text);
   if (skills.length) {
     cv.sections.skills = [newEntry({ name: '', items: skills })];
@@ -205,7 +194,6 @@ export function parseLinkedIn(pdf: PdfText): LinkedInResult {
   const honors = (S.parts.honors ?? []).map((l) => l.text);
   if (honors.length) cv.sections.awards = honors.map((t) => newEntry({ title: t, issuer: '', date: '' }));
 
-  // Özet: satırları paragraflara birleştir (büyük dikey boşluk = yeni paragraf)
   const sum = M.parts.summary ?? [];
   if (sum.length) {
     let text = '';
@@ -221,7 +209,6 @@ export function parseLinkedIn(pdf: PdfText): LinkedInResult {
     found.push('özet');
   }
 
-  // Deneyim
   const exp = M.parts.experience ?? [];
   if (exp.length) {
     const desc = modeSize(exp);
@@ -230,7 +217,6 @@ export function parseLinkedIn(pdf: PdfText): LinkedInResult {
     let company = '';
     let companyLoc = '';
     dateIdx.forEach((di, k) => {
-      // başlık satırları: tarih satırının hemen üstündeki büyük yazılar
       let j = di - 1;
       const heads: string[] = [];
       while (j >= 0 && (isHead(exp[j]) || DURATION_LINE.test(exp[j].text)) && !DATE_LINE.test(exp[j].text)) {
@@ -244,7 +230,6 @@ export function parseLinkedIn(pdf: PdfText): LinkedInResult {
       }
       const m = DATE_LINE.exec(exp[di].text)!;
       const current = new RegExp(PRESENT_RE, 'i').test(m[2]);
-      // açıklama: bir sonraki girdinin başlık satırlarına kadar
       const nextStart = (() => {
         if (k + 1 >= dateIdx.length) return exp.length;
         let s = dateIdx[k + 1] - 1;
@@ -257,7 +242,6 @@ export function parseLinkedIn(pdf: PdfText): LinkedInResult {
         location = body.shift()!;
         if (!companyLoc) companyLoc = location;
       }
-      // madde işaretli satırlar madde, diğerleri açıklama
       const bullets: string[] = [];
       const descLines: string[] = [];
       for (const t of body) {
@@ -280,7 +264,6 @@ export function parseLinkedIn(pdf: PdfText): LinkedInResult {
     if (cv.sections.experience.length) found.push(`${cv.sections.experience.length} deneyim`);
   }
 
-  // Eğitim
   const edu = M.parts.education ?? [];
   if (edu.length) {
     const desc = Math.min(...edu.map((l) => Math.round(l.size * 2) / 2));

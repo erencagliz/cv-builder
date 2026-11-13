@@ -24,16 +24,14 @@ import {
 } from '../ui/fields';
 import { SortableList, DragHandle } from '../ui/Sortable';
 import { cropPhoto, PhotoError } from '../ui/photo';
-import { useToast } from '../ui/app';
+import { useToast } from '../ui/toast';
 import { IconPicker } from '../ui/IconPicker';
 import { sectionIconId } from '../render/iconSvg';
 
 type Update = (fn: (d: Draft<CV>) => void, key?: string) => void;
 
-/** Aynı odak isteğinin panel yeniden açıldığında tekrar uygulanmaması için */
 const handled = { section: 0, entry: 0 };
 
-/* ======================================================================= */
 export function ContentPanel({ cv }: { cv: CV }) {
   const update = useEditor((s) => s.update);
   const [open, setOpen] = useState<Record<string, boolean>>({ header: true });
@@ -43,7 +41,7 @@ export function ContentPanel({ cv }: { cv: CV }) {
     if (!req || req.n === handled.section) return;
     handled.section = req.n;
     setOpen((o) => ({ ...o, [req.section]: true }));
-    if (req.entryId) return; // girdiye EntryList kaydırır
+    if (req.entryId) return;
     setTimeout(() => document.querySelector(`[data-sec="${req.section}"]`)?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 60);
   }, [req]);
 
@@ -84,10 +82,9 @@ export function ContentPanel({ cv }: { cv: CV }) {
   );
 }
 
-/* ======================= Başlık: kişisel + iletişim ======================= */
 export function HeaderCard({ cv, update, open, onToggle }: { cv: CV; update: Update; open: boolean; onToggle: () => void }) {
   const p = cv.personal;
-  const set = (k: keyof CV['personal']) => (v: unknown) => update((d) => void ((d.personal as any)[k] = v), `p.${k}`);
+  const set = (k: keyof CV['personal']) => (v: unknown) => update((d) => void ((d.personal as unknown as Record<string, unknown>)[k] = v), `p.${k}`);
   const [touched, setTouched] = useState<Record<string, boolean>>({});
   const emailErr = touched.email && p.email && !isValidEmail(p.email) ? 'E-posta adresi eksik görünüyor (ör. ad@ornek.com).' : undefined;
   const fullName = [p.firstName, p.lastName].filter(Boolean).join(' ');
@@ -158,10 +155,9 @@ export function PhotoField({ cv, update }: { cv: CV; update: Update }) {
       setError(e instanceof PhotoError ? e.message : 'Fotoğraf açılamadı. JPG veya PNG bir fotoğraf dene.');
     } finally {
       setBusy(false);
-      if (input.current) input.current.value = ''; // aynı dosya tekrar seçilebilsin
+      if (input.current) input.current.value = '';
     }
   };
-  // Fotoğraf var ama CV'de görünmüyorsa nedenini açıkça söyle
   const hiddenReason = !p.photo ? '' : !p.showPhoto ? 'Fotoğraf yüklü ama “CV’de göster” kapalı.' : cv.international ? 'Uluslararası mod açık olduğu için fotoğraf CV’de gizleniyor.' : '';
   return (
     <div
@@ -289,7 +285,6 @@ function LinksEditor({ cv, update }: { cv: CV; update: Update }) {
   );
 }
 
-/* ============================ Bölüm kartı ============================ */
 export function SectionCard({
   cv,
   sectionKey,
@@ -487,7 +482,6 @@ function SectionBody({ cv, sectionKey, update }: { cv: CV; sectionKey: SectionKe
   );
 }
 
-/* ============================ Girdi listesi ============================ */
 function EntryList({
   items,
   fields,
@@ -603,12 +597,11 @@ function EntryField({ field: f, value, onChange, cv }: { field: FieldDef; value:
   }
 }
 
-/* ============================ Kişisel bilgiler ============================ */
 const LICENSES = ['M', 'A1', 'A2', 'A', 'B1', 'B', 'BE', 'C1', 'C1E', 'C', 'CE', 'D1', 'D1E', 'D', 'DE', 'F', 'G'];
 
 function PersonalDetails({ cv, update }: { cv: CV; update: Update }) {
   const p = cv.personal;
-  const set = (k: keyof CV['personal']) => (v: unknown) => update((d) => void ((d.personal as any)[k] = v), `p.${k}`);
+  const set = (k: keyof CV['personal']) => (v: unknown) => update((d) => void ((d.personal as unknown as Record<string, unknown>)[k] = v), `p.${k}`);
   return (
     <div className="grid">
       {cv.international && (

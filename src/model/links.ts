@@ -1,7 +1,6 @@
 export interface LinkType {
   id: string;
   name: string;
-  /** {u} kullanıcı adıyla değiştirilir; yoksa değer tam URL olmalıdır */
   pattern?: string;
   placeholder: string;
 }
@@ -33,7 +32,6 @@ export const LINK_MAP = Object.fromEntries(LINK_TYPES.map((t) => [t.id, t]));
 
 const looksLikeUrl = (v: string) => /^https?:\/\//i.test(v) || /^[\w-]+(\.[\w-]+)+(\/|$)/.test(v);
 
-/** Kullanıcının yazdığı değeri tam URL'ye çevirir. */
 export function resolveLink(type: string, raw: string): string {
   const v = raw.trim();
   if (!v) return '';
@@ -43,7 +41,6 @@ export function resolveLink(type: string, raw: string): string {
   return `https://${v}`;
 }
 
-/** PDF'te görünen, ATS'nin okuyacağı kısa biçim: linkedin.com/in/ad */
 export function displayLink(url: string): string {
   return url
     .replace(/^https?:\/\//i, '')
@@ -60,26 +57,23 @@ export function isValidUrl(url: string): boolean {
   }
 }
 
-/** Türkiye numarası mı? (+90 ile ya da 0/5/2/3/4 ile başlayan, en fazla 10 haneli ulusal kısım) */
 function trNational(raw: string): string | null {
   const t = raw.trim();
   let d = t.replace(/\D/g, '');
   if (t.startsWith('+') || t.startsWith('00')) {
     if (t.startsWith('00')) d = d.slice(2);
-    if (!d.startsWith('9')) return null; // başka ülke kodu
+    if (!d.startsWith('9')) return null;
     if (d.length >= 2 && !d.startsWith('90')) return null;
     d = d.slice(2);
   } else if (d.startsWith('90') && d.length > 10) d = d.slice(2);
   else if (d.startsWith('0')) d = d.slice(1);
-  // "+90 (" yazılıyken 0532… diye devam edilirse baştaki 0 ulusal koda ait değildir
   return d.replace(/^0+/, '').slice(0, 10);
 }
 
-/** Yazarken uygulanan maske: +90 (542) 355 56 49 */
 export function maskPhone(raw: string): string {
   if (!raw.trim()) return '';
   const n = trNational(raw);
-  if (n === null) return raw.replace(/[^\d+()\s-]/g, '').replace(/\s{2,}/g, ' '); // yabancı numara: serbest
+  if (n === null) return raw.replace(/[^\d+()\s-]/g, '').replace(/\s{2,}/g, ' ');
   if (!n.length) return '+90 (';
   let out = `+90 (${n.slice(0, 3)}`;
   if (n.length >= 3) out += ')';
@@ -89,7 +83,6 @@ export function maskPhone(raw: string): string {
   return out;
 }
 
-/** Kaydedilmiş/içe aktarılan numarayı tek biçime getirir: +90 (5xx) xxx xx xx; Türkiye dışı numaralara dokunmaz. */
 export function formatPhone(raw: string): string {
   const n = trNational(raw);
   if (n === null || n.length !== 10) return raw.trim();

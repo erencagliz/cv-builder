@@ -1,4 +1,3 @@
-/** WCAG göreli parlaklık ve kontrast oranı */
 function lum(hex: string): number {
   const m = /^#?([0-9a-f]{6})$/i.exec(hex);
   if (!m) return 0;

@@ -25,7 +25,10 @@ import { uiLang, setUiLang, uiLocale } from '../i18n';
 import { Applications } from './Applications';
 import { ShareDrawer } from '../share/ShareDrawer';
 import { Icon } from '../ui/fields';
-import { downloadBlob, navigate, useToast, ThemeToggle } from '../ui/app';
+import { downloadBlob } from '../ui/download';
+import { go } from '../ui/router';
+import { useToast } from '../ui/toast';
+import { ThemeToggle } from '../ui/ThemeToggle';
 import { APP_NAME } from '../config';
 
 export function EditorPage({ id }: { id: string }) {
@@ -54,7 +57,7 @@ export function EditorPage({ id }: { id: string }) {
       <div className="empty-state">
         <h1>Bu CV bulunamadı</h1>
         <p>CV’ler yalnızca bu tarayıcıda saklanır. Başka bir cihazda oluşturduysan oradan JSON olarak dışa aktarıp burada içe aktarabilirsin.</p>
-        <button className="btn primary" onClick={() => navigate('/', true)}>
+        <button className="btn primary" onClick={() => go({ name: 'home' }, true)}>
           Son CV’ni aç
         </button>
       </div>
@@ -82,7 +85,6 @@ function Editor({ cv }: { cv: CV }) {
     try {
       localStorage.setItem('welcomed', '1');
     } catch {
-      /* depolama kapalı olabilir */
     }
   };
   const liInput = useRef<HTMLInputElement>(null);
@@ -173,13 +175,11 @@ function Editor({ cv }: { cv: CV }) {
     }
   };
 
-  // Klavye kısayolları
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       const mod = e.ctrlKey || e.metaKey;
       if (!mod) return;
       const k = e.key.toLowerCase();
-      // Alanlar React tarafından yönetildiği için geri al her yerde uygulama geçmişini kullanır
       if (k === 'z' && !e.shiftKey) {
         e.preventDefault();
         undo();
@@ -230,7 +230,7 @@ function Editor({ cv }: { cv: CV }) {
     await flushSave();
     const copy: CV = { ...structuredClone(cv), id: uid(), name: `${cv.name} (kopya)`, createdAt: Date.now(), updatedAt: Date.now() };
     await saveCV(copy);
-    navigate(`/duzenle/${copy.id}`);
+    go({ name: 'edit', id: copy.id });
     toast('Kopya oluşturuldu. Artık kopyayı düzenliyorsun.');
   };
   const importFile = async (f: File) => {

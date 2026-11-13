@@ -1,12 +1,6 @@
-/**
- * Meslek → sık aranan anahtar kelimeler.
- * İlan yapıştırılmadığında bile CV'nin unvanına bakıp o rolde işverenlerin ve ATS filtrelerinin en sık aradığı
- * terimleri önerir. Liste, Türkiye'deki iş ilanlarında sık geçen sert yetkinliklerden derlenmiştir; yumuşak beceriler bilerek yoktur.
- */
 export interface Role {
   id: string;
   name: string;
-  /** unvanda geçerse bu rol seçilir (küçük harf, ı→i katlanmış) */
   match: string[];
   keywords: string[];
 }
@@ -172,10 +166,8 @@ export const ROLES: Role[] = [
 
 const fold = (t: string) => t.toLocaleLowerCase('tr-TR').replace(/ı/g, 'i').replace(/[şŞ]/g, 's').replace(/[ğĞ]/g, 'g').replace(/[üÜ]/g, 'u').replace(/[öÖ]/g, 'o').replace(/[çÇ]/g, 'c').replace(/[âÂ]/g, 'a');
 
-/** Genel terimler: daha belirli bir eşleşme varsa (ör. "Frontend Developer") o kazanır */
 const GENERIC = new Set(['developer', 'programci', 'software engineer', 'software developer', 'yazilim gelistirici', 'yazilim muhendis', 'yazilim uzman', 'dijital', 'quality', 'network']);
 
-/** Unvana (ve olmazsa son pozisyona) bakarak en uygun rolü bulur. Belirli eşleşmeler (uzun olan) önce gelir. */
 export function detectRole(...titles: string[]): Role | null {
   for (const raw of titles) {
     const t = ` ${fold(raw || '')} `;
@@ -193,7 +185,6 @@ export function detectRole(...titles: string[]): Role | null {
 
 export { fold };
 
-/** İngilizce CV'ler için rol anahtar kelimelerinin İngilizce karşılıkları (teknoloji adları zaten ortaktır) */
 export const KW_EN: Record<string, string> = {
   Yedekleme: 'Backup', Sanallaştırma: 'Virtualization', Envanter: 'Asset management', Routing: 'Routing', Switching: 'Switching',
   'Penetrasyon testi': 'Penetration testing', 'Zafiyet analizi': 'Vulnerability assessment', 'Olay müdahalesi': 'Incident response', KVKK: 'GDPR',

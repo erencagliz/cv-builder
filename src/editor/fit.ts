@@ -1,14 +1,12 @@
 import type { CV, Design } from '../model/types';
 import { buildModel } from '../render/buildModel';
 
-/** Okunabilirlik sınırları: bunların altına inilmez */
 const MIN = { body: 8.5, meta: 7.5, entryTitle: 8.5, heading: 9, title: 9.5, name: 16, leading: 0.4, margin: 10 };
 
-/** Tasarımı f oranında sıkıştırır (1 = değişmez) */
 export function scaleDesign(d: Design, f: number): Design {
   const r1 = (v: number) => Math.round(v * 10) / 10;
   const sz = (v: number, min: number) => Math.max(min, r1(v * f));
-  const gap = (v: number) => r1(v * (f * f)); // boşluklar yazıdan daha hızlı küçülür
+  const gap = (v: number) => r1(v * (f * f));
   return {
     ...d,
     sizes: {
@@ -34,10 +32,6 @@ export function scaleDesign(d: Design, f: number): Design {
   };
 }
 
-/**
- * En az küçültmeyle tek sayfaya sığan tasarımı ikili aramayla bulur.
- * Sığmıyorsa null döner (içerik kısaltılmalı).
- */
 export async function fitToOnePage(cv: CV, count: (cv: CV) => Promise<number>): Promise<{ design: Design; factor: number } | null> {
   if ((await count(cv)) <= 1) return { design: cv.design, factor: 1 };
   const lo0 = 0.6;

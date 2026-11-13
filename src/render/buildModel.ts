@@ -4,7 +4,6 @@ import { LINK_MAP, displayLink, resolveLink } from '../model/links';
 import fonts from './fonts.json';
 import { iconSvg, sectionIconId, contactIconId } from './iconSvg';
 
-/* ---------- Typst'e giden model ---------- */
 export interface Seg { t: string; b?: boolean; i?: boolean }
 export type Rich = Seg[];
 export interface RenderRole { heading: string; date: string; sub: string; desc: Rich[]; bullets: Rich[]; tags: string; tagsLabel: string }
@@ -33,7 +32,7 @@ export interface RenderSection {
   lines?: RenderLine[];
 }
 export interface RenderLetter {
-  place: string; // "İstanbul, 18 Ekim 2026"
+  place: string;
   recipient: string[];
   subject: string;
   greeting: string;
@@ -52,7 +51,6 @@ export interface RenderModel {
   labels: { present: string };
 }
 
-/* ---------- Dil etiketleri ---------- */
 const MONTHS: Record<Lang, { short: string[]; long: string[] }> = {
   tr: {
     short: ['Oca', 'Şub', 'Mar', 'Nis', 'May', 'Haz', 'Tem', 'Ağu', 'Eyl', 'Eki', 'Kas', 'Ara'],
@@ -152,7 +150,6 @@ const opt = (v: unknown, lang: Lang) => {
   return OPTION_LABELS[k]?.[lang] ?? k;
 };
 
-/* ---------- yardımcılar ---------- */
 const str = (v: unknown) => (typeof v === 'string' ? v.trim() : '');
 const arr = (v: unknown) => (Array.isArray(v) ? (v as unknown[]).map(str).filter(Boolean) : []);
 const joinDot = (...p: string[]) => p.filter(Boolean).join(' · ');
@@ -188,7 +185,6 @@ export function formatRange(r: unknown, fmt: DateFormat, lang: Lang): string {
   return a || b;
 }
 
-/** **kalın** ve *italik* sözdizimini parçalara ayırır */
 export function parseRich(text: string): Rich {
   const out: Seg[] = [];
   const re = /(\*\*([^*]+)\*\*|\*([^*]+)\*)/g;
@@ -258,7 +254,6 @@ export function sectionTitle(cv: CV, key: SectionKey): string {
   return SECTION_MAP[key as keyof typeof SECTION_MAP]?.title[cv.lang] ?? key;
 }
 
-/* ---------- bölüm dönüştürücüler ---------- */
 function mapEntry(key: string, e: Entry, cv: CV): RenderItem {
   const { lang } = cv;
   const fmt = cv.design.dateFormat;
@@ -348,7 +343,7 @@ function mapEntry(key: string, e: Entry, cv: CV): RenderItem {
       it.org = [str(e.title), str(e.company)].filter(Boolean).join(', ');
       it.sub = joinDot(str(e.relation), str(e.email), str(e.phone));
       break;
-    default: // özel bölüm
+    default:
       it.heading = str(e.title);
       it.org = str(e.subtitle);
       it.location = str(e.location);
@@ -359,7 +354,6 @@ function mapEntry(key: string, e: Entry, cv: CV): RenderItem {
 
 const hasContent = (it: RenderItem) => !!(it.heading || it.org || it.desc.length || it.bullets.length);
 
-/** Aynı şirketteki ardışık pozisyonları tek başlık altında toplar. */
 function groupRoles(items: RenderItem[], src: Entry[], cv: CV): RenderItem[] {
   const groups: { items: RenderItem[]; entries: Entry[] }[] = [];
   items.forEach((it, i) => {
@@ -381,7 +375,6 @@ function groupRoles(items: RenderItem[], src: Entry[], cv: CV): RenderItem[] {
       tags: it.tags,
       tagsLabel: it.tagsLabel,
     });
-    // genel tarih aralığı: grubun en eski başlangıcı – en yeni bitişi (liste yeniden eskiye sıralı)
     const newest = entries[0].dates as DateRange | undefined;
     const oldest = entries[entries.length - 1].dates as DateRange | undefined;
     return {
@@ -418,7 +411,6 @@ function personalLines(cv: CV): RenderLine[] {
   return lines;
 }
 
-/* ---------- ana dönüştürücü ---------- */
 export function buildModel(cv: CV): RenderModel {
   const { lang, design } = cv;
   const p = cv.personal;
@@ -533,7 +525,6 @@ export function fileName(cv: CV, ext: string): string {
   return `${ascii || 'CV'}-${cv.lang === 'tr' ? 'CV' : 'Resume'}.${ext}`;
 }
 
-/* ---------- ön yazı ---------- */
 const LETTER_L = {
   tr: { subject: 'Konu', application: 'pozisyonu için başvuru', greeting: 'Sayın Yetkili,', closing: 'Saygılarımla,', letter: 'Ön Yazı' },
   en: { subject: 'Subject', application: 'application', greeting: 'Dear Hiring Manager,', closing: 'Sincerely,', letter: 'Cover Letter' },
@@ -574,7 +565,6 @@ export function buildLetterModel(cv: CV): RenderModel {
   };
 }
 
-/** Ön yazıda paragraflar boş satırla ayrılır; tek satır sonu korunmaz */
 function paragraphsBlank(v: string): Rich[] {
   return (v || '')
     .split(/\n\s*\n/)

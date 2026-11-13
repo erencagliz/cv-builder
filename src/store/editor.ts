@@ -5,7 +5,7 @@ import { saveCV, maybeSnapshot, pruneSnapshots } from './db';
 import { requestPersistence } from '../ui/selfheal';
 
 const HISTORY_LIMIT = 200;
-const GROUP_MS = 600; // bu süre içindeki ardışık değişiklikler tek geri-al adımıdır
+const GROUP_MS = 600;
 
 interface EditorState {
   cv: CV | null;
@@ -15,7 +15,6 @@ interface EditorState {
   lastKey: string;
   saveState: 'saved' | 'saving' | 'error';
   load: (cv: CV) => void;
-  /** key: aynı alanın ardışık düzenlemelerini gruplamak için */
   update: (fn: (d: Draft<CV>) => void, key?: string) => void;
   replace: (cv: CV) => void;
   undo: () => void;
@@ -31,7 +30,6 @@ export const useEditor = create<EditorState>((set, get) => {
     saveTimer = setTimeout(async () => {
       const cv = get().cv;
       if (!cv) return;
-      // kendi kendini onarma: kayıt başarısızsa artan aralıklarla yeniden dene; sürüm geçmişi kaydı asıl kaydı engellemesin
       for (let attempt = 0; attempt < 4; attempt++) {
         try {
           await saveCV(get().cv ?? cv);
@@ -40,7 +38,7 @@ export const useEditor = create<EditorState>((set, get) => {
           maybeSnapshot(get().cv ?? cv).catch(() => pruneSnapshots().catch(() => {}));
           return;
         } catch {
-          if (attempt === 0) await pruneSnapshots().catch(() => {}); // yer açmayı dene
+          if (attempt === 0) await pruneSnapshots().catch(() => {});
           await new Promise((r) => setTimeout(r, 1500 * (attempt + 1)));
         }
       }
@@ -95,7 +93,6 @@ export const useEditor = create<EditorState>((set, get) => {
   };
 });
 
-/** Sekme kapanırken bekleyen kaydı hemen yaz */
 export async function flushSave() {
   clearTimeout(saveTimer);
   const cv = useEditor.getState().cv;

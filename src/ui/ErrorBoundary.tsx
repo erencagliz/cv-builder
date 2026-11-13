@@ -2,7 +2,6 @@ import { Component, type ReactNode } from 'react';
 import { isChunkError, reloadOnce } from './selfheal';
 import { downloadBackup } from '../store/backup';
 
-/** Beklenmedik bir arayüz hatasında beyaz ekran yerine kurtarma ekranı gösterir; veriler IndexedDB'de güvende kalır. */
 export class ErrorBoundary extends Component<{ children: ReactNode }, { error: Error | null; saved: boolean }> {
   state = { error: null as Error | null, saved: false };
   static getDerivedStateFromError(error: Error) {
@@ -32,7 +31,6 @@ export class ErrorBoundary extends Component<{ children: ReactNode }, { error: E
                   await downloadBackup();
                   this.setState({ saved: true });
                 } catch {
-                  /* yedek alınamadıysa da yenileme yolu açık */
                 }
               }}
             >

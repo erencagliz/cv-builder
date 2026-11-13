@@ -1,17 +1,13 @@
-/**
- * Word (.docx) çıktısı: tek sütun, gerçek başlık stilleri, Word'ün kendi madde işaretleri.
- * Tablo, metin kutusu, üst/alt bilgi kullanılmaz (ATS dostu).
- */
 import type { RenderModel, Rich } from '../render/buildModel';
 
 const hex = (c: string) => c.replace('#', '').toUpperCase();
-const MM = 56.6929; // 1 mm = 56.69 twip
+const MM = 56.6929;
 
 export async function buildDocx(m: RenderModel): Promise<Blob> {
   const d = await import('docx');
   const { Document, Packer, Paragraph, TextRun, ExternalHyperlink, AlignmentType, BorderStyle, TabStopType, HeadingLevel, LevelFormat } = d;
   const D = m.design;
-  const pt = (v: number) => Math.round(v * 2); // docx yarım punto
+  const pt = (v: number) => Math.round(v * 2);
   const accent = hex(D.colors.accent);
   const ink = hex(D.colors.text);
   const muted = hex(D.colors.muted);

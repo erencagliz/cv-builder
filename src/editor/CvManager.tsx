@@ -10,11 +10,11 @@ import { sampleFor } from '../content/gallery';
 import { buildModel } from '../render/buildModel';
 import { renderSvg } from '../render/client';
 import { flushSave } from '../store/editor';
-import { navigate, useToast } from '../ui/app';
+import { go } from '../ui/router';
+import { useToast } from '../ui/toast';
 import { Icon } from '../ui/fields';
 
-/** LinkedIn PDF'ini okuyup yeni CV oluşturur */
-export async function cvFromLinkedIn(f: File): Promise<{ cv: CV; found: string[] }> {
+async function cvFromLinkedIn(f: File): Promise<{ cv: CV; found: string[] }> {
   const { extractPdfText } = await import('../ats/pdfText');
   const { parseLinkedIn } = await import('../import/linkedin');
   return parseLinkedIn(await extractPdfText(new Uint8Array(await f.arrayBuffer())));
@@ -35,7 +35,6 @@ function useThumbs(ids: string[], enabled: boolean) {
           const svg = r.svg.replace(/<svg([^>]*?)viewBox="[^"]*"([^>]*?)width="[^"]*"([^>]*?)height="[^"]*"/, (_m, a, b, c) => `<svg${a}viewBox="0 0 ${p.width} ${p.height}"${b}width="100%"${c}height="100%"`);
           setThumbs((t) => ({ ...t, [id]: svg }));
         } catch {
-          /* küçük resim olmadan da çalışır */
         }
       }
     })();
@@ -47,7 +46,6 @@ function useThumbs(ids: string[], enabled: boolean) {
   return thumbs;
 }
 
-/** "CV'lerim" paneli: CV listesi ve yeni CV oluşturma yolları */
 export function CvManager({ currentId, onClose, startTab = 'list' }: { currentId: string; onClose: () => void; startTab?: 'list' | 'new' | 'samples' | 'linkedin' | 'import' }) {
   const [rows, setRows] = useState<CVRow[] | null>(null);
   const [tab, setTab] = useState(startTab);
@@ -90,7 +88,7 @@ export function CvManager({ currentId, onClose, startTab = 'list' }: { currentId
   const open = async (cv: CV, msg?: string) => {
     await saveCV(cv);
     onClose();
-    navigate(`/duzenle/${cv.id}`);
+    go({ name: 'edit', id: cv.id });
     if (msg) toast(msg);
   };
   const duplicate = async (id: string) => {
@@ -106,7 +104,8 @@ export function CvManager({ currentId, onClose, startTab = 'list' }: { currentId
     setRows(left);
     if (id === currentId) {
       onClose();
-      navigate(left[0] ? `/duzenle/${left[0].id}` : '/', true);
+      if (left[0]) go({ name: 'edit', id: left[0].id }, true);
+      else go({ name: 'home' }, true);
     }
     toast('CV silindi.');
   };
@@ -146,11 +145,10 @@ export function CvManager({ currentId, onClose, startTab = 'list' }: { currentId
                   e.target.value = '';
                   try {
                     const text = await f.text();
-                    let parsed: any = null;
+                    let parsed: { format?: unknown; cvs?: unknown[]; applications?: unknown[] } | null = null;
                     try {
                       parsed = JSON.parse(text);
                     } catch {
-                      /* importAny anlaşılır hata verir */
                     }
                     if (parsed?.format === BACKUP_FORMAT) {
                       const r = await restoreBackup(parsed);
@@ -179,7 +177,7 @@ export function CvManager({ currentId, onClose, startTab = 'list' }: { currentId
               <ul className="cv-list one-col">
                 {(rows ?? []).map((c) => (
                   <li key={c.id} className={`cv-item${c.id === currentId ? ' current' : ''}`}>
-                    <button className="cv-open" onClick={() => (c.id === currentId ? onClose() : (onClose(), navigate(`/duzenle/${c.id}`)))}>
+                    <button className="cv-open" onClick={() => (c.id === currentId ? onClose() : (onClose(), go({ name: 'edit', id: c.id })))}>
                       <span className="cv-name">
                         {c.name}
                         {c.id === currentId && <span className="pill">Açık</span>}

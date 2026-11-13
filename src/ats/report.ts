@@ -1,14 +1,3 @@
-/**
- * CV analiz motoru — kural tabanlı, tamamen yerel.
- *
- * Beş kategori, her biri ağırlıklı puanlanır:
- *   1. Okunabilirlik (ATS ayrıştırma)  – indirilen PDF'in metni geri okunur, bir ATS ayrıştırıcısı taklit edilir
- *   2. Etki ve içerik                  – her madde 0-100 puanlanır (fiil, ölçü, sonuç, uzunluk, dil)
- *   3. Bütünlük                        – iletişim, bölümler ve her girdinin zorunlu alanları
- *   4. Anahtar kelimeler               – yetenek kapsamı, kanıtlanmış yetenekler, role özgü terimler, ilan uyumu
- *   5. Düzen ve uzunluk                – kıdeme göre sayfa/kelime, kronoloji, tutarlılık, tipografi
- * Her bulgunun "kaybettirdiği puan" hesaplanır; "önce bunları düzelt" listesi bu kayba göre sıralanır.
- */
 import type { CV, DateRange, Entry, Lang } from '../model/types';
 import type { RenderModel } from '../render/buildModel';
 import { isValidEmail, resolveLink, displayLink } from '../model/links';
@@ -17,12 +6,12 @@ import { contrast } from '../editor/contrast';
 import { totalExperienceMonths } from './quality';
 import { detectRole, fold, KW_EN, type Role } from './roles';
 import { matchJob } from './keywords';
+import { unicodeWords } from './unicodeWord';
 
-/* ============================== Tipler ============================== */
 export type CategoryId = 'parse' | 'impact' | 'complete' | 'keywords' | 'layout';
 export type Level = 'ok' | 'warn' | 'error' | 'info';
 export interface Target {
-  section: string; // 'header' | bölüm anahtarı
+  section: string;
   entryId?: string;
 }
 export interface FindingItem {
@@ -30,7 +19,6 @@ export interface FindingItem {
   where?: string;
   note?: string;
   target?: Target;
-  /** yeteneklere eklenebilir anahtar kelime */
   keyword?: string;
 }
 export interface Finding {
@@ -39,13 +27,10 @@ export interface Finding {
   level: Level;
   title: string;
   detail?: string;
-  /** bu kontrolün en fazla getirebileceği puan */
   weight: number;
-  /** alınan puan (0..weight) */
   earned: number;
   target?: Target;
   items?: FindingItem[];
-  /** ad/e-posta okunamıyor gibi: toplam puanı tavanlar */
   critical?: boolean;
 }
 export interface BulletScore {
@@ -88,7 +73,6 @@ export const CATEGORIES: { id: CategoryId; label: string; desc: string; weight: 
   { id: 'layout', label: 'Düzen ve uzunluk', desc: 'Kıdemine uygun uzunluk, kronoloji ve tutarlılık.', weight: 0.1 },
 ];
 
-/* ============================== Yardımcılar ============================== */
 const s = (v: unknown) => (typeof v === 'string' ? v.trim() : '');
 const norm = (t: string) => t.toLocaleLowerCase('tr-TR').replace(/[‐-―]/g, '-').replace(/\s+/g, ' ').trim();
 const plain = (t: string) => t.replace(/\*\*?|__/g, '').trim();
@@ -105,7 +89,6 @@ const esc = (t: string) => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 const pct = (n: number) => `%${Math.round(n * 100)}`;
 const bulletsOf = (e: Entry) => (Array.isArray(e.bullets) ? (e.bullets as string[]).map((b) => plain(String(b))).filter(Boolean) : []);
 
-/** Katlanmış metinde, kelime başında başlayan (Türkçe ekleri tolere eden) arama */
 export function hasTerm(foldedText: string, term: string): boolean {
   const k = fold(term).trim();
   if (!k) return false;
@@ -114,7 +97,6 @@ export function hasTerm(foldedText: string, term: string): boolean {
   return false;
 }
 
-/* ============================== Madde puanlama ============================== */
 const STRONG_TR = [
   'yonet', 'kur', 'gelistir', 'tasarla', 'olustur', 'azalt', 'artir', 'hizlandir', 'otomatiklestir', 'iyilestir', 'coz', 'egit', 'buyut',
   'kazandir', 'kazan', 'baslat', 'donustur', 'tasi', 'entegre', 'optimize', 'analiz', 'raporla', 'sun', 'muzakere', 'denetle', 'planla',
@@ -132,13 +114,13 @@ const STRONG_EN = new Set(
     .split(/\s+/)
     .filter(Boolean),
 );
-const WEAK_TR = /\bsorumlu(yd|ydu)?(um|m)?\b|\bgörev (aldım|yaptım)\b|\byardımcı oldum\b|\byardım ettim\b|\bilgilendim\b|\bçalıştım\b|\bbulundum\b|\bkatkıda bulundum\b|\bdestek oldum\b|\byer aldım\b|\bkatıldım\b/i;
+const WEAK_TR = unicodeWords(/\bsorumlu(yd|ydu)?(um|m)?\b|\bgörev (aldım|yaptım)\b|\byardımcı oldum\b|\byardım ettim\b|\bilgilendim\b|\bçalıştım\b|\bbulundum\b|\bkatkıda bulundum\b|\bdestek oldum\b|\byer aldım\b|\bkatıldım\b/i);
 const WEAK_EN = /^(responsible|helped|assisted|worked|participated|involved|handled|tasked|duties|in charge)\b|\bresponsible for\b/i;
-const VAGUE_TR = /\b(çeşitli|bazı|vb\.?|vs\.?|birçok|pek çok|gibi işler|ve benzeri)\b/i;
+const VAGUE_TR = unicodeWords(/\b(çeşitli|bazı|vb\.|vs\.|vb|vs|birçok|pek çok|gibi işler|ve benzeri)(?!\w)/i);
 const VAGUE_EN = /\b(various|several|etc\.?|numerous|many|some|stuff|things)\b/i;
-const RESULT_TR = /\b(sayesinde|sonucunda|oranında|tasarruf|kazanç|kazandırarak|artış|düşüş|azalma)\b|\p{L}+(arak|erek)\b|\bile\b.*\b\p{L}+(dım|dim|dum|düm|tım|tim|tum|tüm)\b/iu;
+const RESULT_TR = unicodeWords(/\b(sayesinde|sonucunda|oranında|tasarruf|kazanç|kazandırarak|artış|düşüş|azalma)\b|\p{L}+(arak|erek)\b|\bile\b.*\b\p{L}+(dım|dim|dum|düm|tım|tim|tum|tüm)\b/iu);
 const RESULT_EN = /\b(resulting in|leading to|which|saving|increasing|reducing|improving|achieving|enabling|by \w+ing|so that|cutting)\b/i;
-const NUMBER_WORD = /\b(iki|üç|dört|beş|altı|yedi|sekiz|dokuz|on|yüz|bin|milyon|milyar|yarı|kat|katına|double|doubled|triple|tripled|half|twice|thousand|million|billion|hundred)\b/i;
+const NUMBER_WORD = unicodeWords(/\b(iki|üç|dört|beş|altı|yedi|sekiz|dokuz|on|yüz|bin|milyon|milyar|yarı|kat|katına|double|doubled|triple|tripled|half|twice|thousand|million|billion|hundred)\b/i);
 
 export function hasMetric(t: string): boolean {
   const withoutYears = t.replace(/\b(19|20)\d{2}\b/g, '');
@@ -160,7 +142,7 @@ function classifyVerb(t: string, lang: Lang): BulletScore['verb'] {
   const ws = clean.split(/\s+/);
   const last = fold(ws[ws.length - 1] ?? '');
   const prev = fold(ws[ws.length - 2] ?? '');
-  if (/(il|ul|in|un|n)d[iu]$/.test(last) && last.length > 4) return 'passive'; // yapıldı, sağlandı, edildi
+  if (/(il|ul|in|un|n)d[iu]$/.test(last) && last.length > 4) return 'passive';
   const active = /[dt][iu]m$|[dt][iu]k$|iyorum$|uyorum$|yorum$|[dt][iu]g[iu]m$/.test(last);
   const strongHit = STRONG_TR.some((st) => last.startsWith(st) || ((last === 'ettim' || last === 'ettik' || last === 'getirdim' || last === 'aldim') && prev.startsWith(st)));
   if (active && strongHit) return 'strong';
@@ -212,7 +194,6 @@ export function scoreBullet(text: string, lang: Lang): Omit<BulletScore, 'where'
   return { text: t, score: Math.min(100, score), verb, metric, result, words: w, tips };
 }
 
-/* ============================== Klişe ve yumuşak beceriler ============================== */
 const CLICHES: Record<Lang, string[]> = {
   tr: [
     'takım oyuncusu', 'takım çalışmasına yatkın', 'ekip çalışmasına yatkın', 'çalışkan', 'dinamik', 'sonuç odaklı', 'hedef odaklı', 'çözüm odaklı',
@@ -241,14 +222,11 @@ const isSoft = (k: string) => {
   return SOFT.some((x) => f === x || f.startsWith(x + ' ') || f.endsWith(' ' + x) || (f.includes(x) && f.length <= x.length + 8));
 };
 
-/* ============================== Ana fonksiyon ============================== */
 export interface ReportInput {
   cv: CV;
   model: RenderModel;
-  /** indirilen PDF'ten geri okunan metin */
   text: string;
   pages: number;
-  /** düz metin CV (ilan eşleştirme için) */
   plainText: string;
 }
 
@@ -269,7 +247,6 @@ export function buildReport({ cv, model, text, pages, plainText }: ReportInput):
     return t.filter(Boolean).join(' · ') || (lang === 'tr' ? 'Başlıksız' : 'Untitled');
   };
 
-  /* ---------------- 1. ATS okunabilirliği (PDF metni) ---------------- */
   const T = norm(text);
   const lines = text.split('\n').map((l) => l.trim()).filter(Boolean);
   const totalWords = words(text);
@@ -314,7 +291,6 @@ export function buildReport({ cv, model, text, pages, plainText }: ReportInput):
         items: missing.map((x) => ({ text: displayLink(x.url) })),
       });
   }
-  // başlıklar ayrı satırda ve standart mı
   const lineSet = new Set(lines.map(norm));
   if (model.sections.length) {
     const notLine = model.sections.filter((sec) => !lineSet.has(norm(sec.title)));
@@ -339,7 +315,6 @@ export function buildReport({ cv, model, text, pages, plainText }: ReportInput):
       items: nonStd.map((h) => ({ text: h.title, note: SECTION_MAP[h.key as keyof typeof SECTION_MAP] ? `Önerilen: ${SECTION_MAP[h.key as keyof typeof SECTION_MAP].title[lang]}` : undefined, target: { section: h.key } })),
     });
   }
-  // okuma sırası: pozisyon → maddeler → sonraki pozisyon (çok sütunlu düzenlerde karışır)
   if (!isHidden('experience') && exp.length) {
     let cursor = 0;
     let disorder = 0;
@@ -363,7 +338,6 @@ export function buildReport({ cv, model, text, pages, plainText }: ReportInput):
         title: disorder ? 'Deneyimler ATS’de karışık sırayla okunuyor' : 'Deneyim ve maddeler doğru sırayla okunuyor',
         detail: disorder ? 'Metin akışı sayfadaki sırayla aynı değil; ATS maddeleri yanlış işe bağlayabilir.' : undefined,
       });
-    // tarihler
     const expItems = model.sections.find((x) => x.key === 'experience')?.items ?? [];
     const dates = expItems.flatMap((it) => (it.roles.length ? it.roles.map((r) => r.date) : [it.date])).filter(Boolean);
     const found = dates.filter((d) => T.includes(norm(d)));
@@ -392,7 +366,6 @@ export function buildReport({ cv, model, text, pages, plainText }: ReportInput):
     });
   }
 
-  /* ---------------- 2. Bütünlük ---------------- */
   const H: Target = { section: 'header' };
   if (!name || !s(p.firstName) || !s(p.lastName)) add({ id: 'c-name', cat: 'complete', level: 'error', weight: 8, critical: true, title: 'Ad ve soyad eksik', target: H });
   if (!s(p.email)) add({ id: 'c-email', cat: 'complete', level: 'error', weight: 8, critical: true, title: 'E-posta adresi yok', detail: 'İşverenin sana ulaşacağı ilk yol.', target: H });
@@ -424,7 +397,6 @@ export function buildReport({ cv, model, text, pages, plainText }: ReportInput):
   );
   if (!cv.sections.languages.length) add({ id: 'c-lang', cat: 'complete', level: 'info', weight: 2, earned: 1, title: 'Yabancı dil bilgisi yok', target: { section: 'languages' } });
 
-  // girdi bazında zorunlu alanlar
   if (hasExp) {
     const issues: FindingItem[] = [];
     for (const e of exp) {
@@ -461,7 +433,6 @@ export function buildReport({ cv, model, text, pages, plainText }: ReportInput):
     if (issues.length) add({ id: 'c-edu-fields', cat: 'complete', level: 'warn', weight: 5, earned: 5 * (1 - issues.length / cv.sections.education.length), title: `${issues.length} eğitimde eksik alan var`, items: issues });
     else add({ id: 'c-edu-fields', cat: 'complete', level: 'ok', weight: 5, title: 'Eğitimlerde okul, bölüm ve tarih var' });
   }
-  // tarih tutarlılığı
   {
     const bad: FindingItem[] = [];
     const now = nowYm();
@@ -477,7 +448,6 @@ export function buildReport({ cv, model, text, pages, plainText }: ReportInput):
     if (bad.length) add({ id: 'c-dates', cat: 'complete', level: 'error', weight: 6, title: `${bad.length} tarih hatalı`, items: bad });
   }
 
-  /* ---------------- 3. Etki ve içerik ---------------- */
   const bulletScores: BulletScore[] = [];
   for (const key of ['experience', 'projects', 'volunteer'] as const) {
     if (isHidden(key)) continue;
@@ -525,7 +495,6 @@ export function buildReport({ cv, model, text, pages, plainText }: ReportInput):
       detail: weak.length ? (lang === 'tr' ? '“Sorumluydum, görev aldım, yardımcı oldum, yapıldı” yerine: yönettim, kurdum, azalttım, hızlandırdım.' : 'Replace “responsible for, helped” with led, built, reduced.') : undefined,
       items: weak.slice(0, 6).map((b) => ({ text: b.text, where: b.where, target: b.target })),
     });
-    // aynı fiilin tekrarı
     const verbKey = (t: string) => {
       const ws = plain(t).replace(/[.!;:,]+$/, '').split(/\s+/);
       const w = fold(lang === 'tr' ? ws[ws.length - 1] : ws[0]);
@@ -551,7 +520,6 @@ export function buildReport({ cv, model, text, pages, plainText }: ReportInput):
         title: `Aynı fiil tekrar ediyor: ${repeated.map((r) => `“${r.sample}” (${r.n})`).join(', ')}`,
         detail: lang === 'tr' ? 'Çeşitlendir: geliştirdim → kurdum, tasarladım, hayata geçirdim; sağladım → kazandırdım, mümkün kıldım.' : 'Vary your verbs.',
       });
-    // girdi başına madde sayısı
     const perRole: FindingItem[] = [];
     exp.forEach((e, i) => {
       const n = bulletsOf(e).length;
@@ -570,7 +538,6 @@ export function buildReport({ cv, model, text, pages, plainText }: ReportInput):
         items: perRole,
       });
   }
-  // özet kalitesi
   if (hasSummary) {
     const sum = plain(cv.summary);
     const w = words(sum);
@@ -607,7 +574,6 @@ export function buildReport({ cv, model, text, pages, plainText }: ReportInput):
       target: issues.length ? { section: 'summary' } : undefined,
     });
   }
-  // klişeler
   {
     const pool = [plain(cv.summary), ...bulletScores.map((b) => b.text)].join(' \n ');
     const found = [...new Set(findCliches(pool, lang))];
@@ -623,7 +589,6 @@ export function buildReport({ cv, model, text, pages, plainText }: ReportInput):
     });
   }
 
-  /* ---------------- 4. Anahtar kelimeler ---------------- */
   const cvFold = fold(plainText);
   const uniqSkills = [...new Map(skillsList.map((k) => [fold(k), k])).values()];
   if (skillsList.length) {
@@ -653,7 +618,6 @@ export function buildReport({ cv, model, text, pages, plainText }: ReportInput):
         items: soft.map((t) => ({ text: t })),
         target: { section: 'skills' },
       });
-    // kanıt: yetenek deneyim/proje/özet metninde de geçiyor mu
     const evidenceText = fold(
       [cv.summary, ...[...exp, ...cv.sections.projects, ...cv.sections.volunteer].flatMap((e) => [...bulletsOf(e), s(e.description), ...(Array.isArray(e.tags) ? (e.tags as string[]) : [])])].join(' \n '),
     );
@@ -676,7 +640,6 @@ export function buildReport({ cv, model, text, pages, plainText }: ReportInput):
       });
     }
   }
-  // role özgü anahtar kelimeler
   const role = detectRole(p.title, s(exp[0]?.position), s(exp[1]?.position));
   if (role) {
     const kws = lang === 'en' ? role.keywords.map((k) => KW_EN[k] ?? k) : role.keywords;
@@ -698,7 +661,6 @@ export function buildReport({ cv, model, text, pages, plainText }: ReportInput):
   } else if (s(p.title)) {
     add({ id: 'k-role', cat: 'keywords', level: 'info', weight: 0, title: 'Unvanına göre rol tanınmadı', detail: 'Role özgü öneri için “İlana uygunluk” sekmesine başvurduğun ilanı yapıştır.' });
   }
-  // unvan tutarlılığı
   if (s(p.title) && hasExp) {
     const tw = fold(p.title).split(/\s+/).filter((x) => x.length > 3);
     const inPos = exp.some((e) => tw.some((w) => fold(s(e.position)).includes(w)));
@@ -712,7 +674,6 @@ export function buildReport({ cv, model, text, pages, plainText }: ReportInput):
       detail: inPos ? undefined : 'Kariyer değiştiriyorsan özetinde bunu bir cümleyle açıkla; ATS unvan ile geçmiş pozisyonları karşılaştırır.',
     });
   }
-  // ilan
   if (cv.jobPosting.trim().length > 40) {
     const m = matchJob(cv.jobPosting, plainText, cv);
     const miss = m.keywords.filter((k) => !k.found);
@@ -728,7 +689,6 @@ export function buildReport({ cv, model, text, pages, plainText }: ReportInput):
     });
   }
 
-  /* ---------------- 5. Düzen ve uzunluk ---------------- */
   const pageIdeal = seniority === 'senior' ? [1, 2] : seniority === 'mid' ? [1, 2] : [1, 1];
   const senLabel = seniority === 'senior' ? '9+ yıl deneyim' : seniority === 'mid' ? '2,5-9 yıl deneyim' : 'yeni mezun / az deneyim';
   if (pages)
@@ -751,7 +711,6 @@ export function buildReport({ cv, model, text, pages, plainText }: ReportInput):
     title: `${totalWords} kelime (ideal aralık ${wr[0]}-${wr[1]})`,
     detail: totalWords < wr[0] ? 'İçerik az; ATS’nin eşleştireceği kelime sayısı düşük kalır.' : totalWords > wr[1] ? 'Uzun; okuyan ortalama 6-8 saniye ayırır. Eski ve ilgisiz kısımları kısalt.' : undefined,
   });
-  // ters kronoloji
   if (exp.length > 1) {
     const starts = exp.map((e) => {
       const d = e.dates as DateRange | undefined;
@@ -775,7 +734,6 @@ export function buildReport({ cv, model, text, pages, plainText }: ReportInput):
       items: wrong,
     });
   }
-  // boşluklar
   {
     const spans = exp
       .map((e) => e.dates as DateRange | undefined)
@@ -790,7 +748,6 @@ export function buildReport({ cv, model, text, pages, plainText }: ReportInput):
     }
     if (gaps) add({ id: 'l-gaps', cat: 'layout', level: 'info', weight: 3, earned: 2, title: `${gaps} yerde 6 aydan uzun boşluk var`, detail: 'Askerlik, eğitim, kurs veya serbest çalışma gibi bir açıklaman varsa CV’de görünsün.' });
   }
-  // üslup tutarlılığı
   if (nB >= 4) {
     const dots = bulletScores.filter((b) => /[.!]$/.test(b.text)).length;
     const mixedPunct = dots > 0 && dots < nB;
@@ -808,7 +765,6 @@ export function buildReport({ cv, model, text, pages, plainText }: ReportInput):
       detail: issues.length ? `${issues.join('; ')}. Hepsinde aynı biçimi kullan.` : undefined,
     });
   }
-  // tipografi
   const d = cv.design;
   add(
     d.sizes.body >= 9.5
@@ -825,14 +781,12 @@ export function buildReport({ cv, model, text, pages, plainText }: ReportInput):
   if (lang === 'en' && !cv.international && (p.showPhoto || p.birthDate))
     add({ id: 'l-intl', cat: 'layout', level: 'info', weight: 3, earned: 1, title: 'İngilizce CV’de fotoğraf veya doğum tarihi var', detail: 'ABD, İngiltere gibi ülkelerde bunlar istenmez; üstteki “Uluslararası” düğmesi gizler.' });
 
-  /* ---------------- Puanlama ---------------- */
   const categories: CategoryScore[] = CATEGORIES.map((c) => {
     const fs = F.filter((f) => f.cat === c.id && f.weight > 0);
     const w = fs.reduce((n, f) => n + f.weight, 0);
     const e = fs.reduce((n, f) => n + f.earned, 0);
     return { ...c, score: w ? Math.round((100 * e) / w) : 100 };
   });
-  // en zayıf halka: 60'ın altındaki her kategori toplamı ayrıca aşağı çeker (tek bir iyi alan zayıf içeriği örtmesin)
   const weakPenalty = categories.reduce((n, c) => n + Math.max(0, 60 - c.score) * 0.25, 0);
   let total = Math.max(0, Math.round(categories.reduce((n, c) => n + c.score * c.weight, 0) - weakPenalty));
   const capped = F.some((f) => f.critical && f.level === 'error');
@@ -847,7 +801,6 @@ export function buildReport({ cv, model, text, pages, plainText }: ReportInput):
         : grade === 'C'
           ? 'Ortalama; öne çıkmak için içeriği güçlendir'
           : 'Zayıf; önce aşağıdaki düzeltmeleri yap';
-  // önce bunları düzelt: toplam puana etkisi en büyük olanlar
   const catW = Object.fromEntries(CATEGORIES.map((c) => [c.id, c.weight])) as Record<CategoryId, number>;
   const catTotal = Object.fromEntries(CATEGORIES.map((c) => [c.id, F.filter((f) => f.cat === c.id).reduce((n, f) => n + f.weight, 0) || 1])) as Record<CategoryId, number>;
   const impact = (f: Finding) => ((f.weight - f.earned) / catTotal[f.cat]) * catW[f.cat] * 100 + (f.critical && f.level === 'error' ? 100 : 0);
@@ -869,7 +822,6 @@ export function buildReport({ cv, model, text, pages, plainText }: ReportInput):
   };
 }
 
-/** Bir bulgunun toplam puana kazandırabileceği yaklaşık puan */
 export function potentialGain(r: Report, f: Finding): number {
   const c = CATEGORIES.find((x) => x.id === f.cat)!;
   const total = r.findings.filter((x) => x.cat === f.cat).reduce((n, x) => n + x.weight, 0) || 1;

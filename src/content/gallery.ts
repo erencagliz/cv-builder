@@ -3,10 +3,8 @@ import { emptyCV, newEntry, uid } from '../model/defaults';
 import { applyTemplate } from '../model/templates';
 import { PROFESSIONS, PROFESSION_MAP } from './professions';
 
-/** Örnek içerikteki [köşeli parantezleri] kaldırır */
 export const fillPlaceholders = (t: string) => t.replace(/\[([^\]]+)\]/g, '$1');
 
-/** Galeride her meslek farklı bir görünümle sergilenir */
 const LOOKS: Record<string, { template: string; accent: string }> = {
   'it-support': { template: 'signature', accent: '#7E2A3B' },
   software: { template: 'technical', accent: '#1F4E8C' },

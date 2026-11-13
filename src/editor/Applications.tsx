@@ -1,10 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
-import { uiLocale } from '../i18n';
+import { t, uiLang, uiLocale } from '../i18n';
 import { listApplications, saveApplication, deleteApplication, newApplication, listCVs, type ApplicationRow, type AppStatus, type CVRow } from '../store/db';
 import { Icon } from '../ui/fields';
-import { downloadBlob, navigate, useToast } from '../ui/app';
+import { downloadBlob } from '../ui/download';
+import { go } from '../ui/router';
+import { useToast } from '../ui/toast';
 
-export const STATUS: { id: AppStatus; label: string }[] = [
+const STATUS: { id: AppStatus; label: string }[] = [
   { id: 'saved', label: 'Kaydedildi' },
   { id: 'applied', label: 'Başvuruldu' },
   { id: 'interview', label: 'Görüşme' },
@@ -14,20 +16,6 @@ export const STATUS: { id: AppStatus; label: string }[] = [
 const statusLabel = (s: AppStatus) => STATUS.find((x) => x.id === s)?.label ?? s;
 const today = () => new Date().toISOString().slice(0, 10);
 const fmtDate = (d: string) => (d ? new Date(d + 'T00:00').toLocaleDateString(uiLocale(), { day: 'numeric', month: 'short', year: 'numeric' }) : '');
-
-/** İlan metninden pozisyon ve şirket adını tahmin eder (yalnızca öneri, kullanıcı değiştirebilir) */
-export function guessFromPosting(ad: string): { position: string; company: string } {
-  const lines = ad
-    .split('\n')
-    .map((l) => l.trim())
-    .filter(Boolean);
-  const company =
-    /(?:şirket|firma|company|kurum)\s*[:：]\s*(.+)/i.exec(ad)?.[1]?.trim() ??
-    lines.find((l) => /\b(A\.?Ş\.?|Ltd\.?|Şti\.?|Inc\.?|LLC|GmbH|Holding|Teknoloji|Group)\b/i.test(l) && l.length < 80) ??
-    '';
-  const position = lines.find((l) => l.length >= 3 && l.length <= 70 && !/[.:!?]$/.test(l) && l !== company) ?? '';
-  return { position: position.replace(/^(pozisyon|position|ilan)\s*[:：]\s*/i, ''), company: company.slice(0, 80) };
-}
 
 export function Applications({ currentCvId, onClose }: { currentCvId: string; onClose: () => void }) {
   const [rows, setRows] = useState<ApplicationRow[] | null>(null);
@@ -67,10 +55,10 @@ export function Applications({ currentCvId, onClose }: { currentCvId: string; on
     setFilter('all');
   };
   const exportCsv = () => {
-    const head = ['Şirket', 'Pozisyon', 'Durum', 'Başvuru tarihi', 'Takip tarihi', 'CV', 'Bağlantı', 'Notlar'];
+    const head = ['Şirket', 'Pozisyon', 'Durum', 'Başvuru tarihi', 'Takip tarihi', 'CV', 'Bağlantı', 'Notlar'].map((h) => t(h));
     const q = (v: string) => `"${String(v ?? '').replace(/"/g, '""')}"`;
-    const body = (rows ?? []).map((r) => [r.company, r.position, statusLabel(r.status), r.appliedAt, r.nextDate, cvs.find((c) => c.id === r.cvId)?.name ?? '', r.url, r.notes].map(q).join(';'));
-    downloadBlob(new Blob(['﻿' + [head.map(q).join(';'), ...body].join('\r\n')], { type: 'text/csv;charset=utf-8' }), 'basvurular.csv');
+    const body = (rows ?? []).map((r) => [r.company, r.position, t(statusLabel(r.status)), r.appliedAt, r.nextDate, cvs.find((c) => c.id === r.cvId)?.name ?? '', r.url, r.notes].map(q).join(';'));
+    downloadBlob(new Blob(['﻿' + [head.map(q).join(';'), ...body].join('\r\n')], { type: 'text/csv;charset=utf-8' }), uiLang() === 'tr' ? 'basvurular.csv' : 'applications.csv');
   };
 
   return (
@@ -145,7 +133,7 @@ export function Applications({ currentCvId, onClose }: { currentCvId: string; on
                         className="link-btn"
                         onClick={() => {
                           onClose();
-                          navigate(`/duzenle/${r.cvId}`);
+                          go({ name: 'edit', id: r.cvId });
                         }}
                       >
                         {`CV: ${cvName}`}

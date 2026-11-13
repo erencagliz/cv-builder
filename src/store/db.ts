@@ -16,8 +16,8 @@ export interface ApplicationRow {
   position: string;
   url: string;
   status: AppStatus;
-  appliedAt: string; // YYYY-MM-DD
-  nextDate: string; // takip tarihi
+  appliedAt: string;
+  nextDate: string;
   notes: string;
   posting: string;
   createdAt: number;
@@ -59,7 +59,6 @@ export async function deleteCV(id: string): Promise<void> {
     await db.snapshots.where('cvId').equals(id).delete();
   });
 }
-/** Sürüm geçmişi: en fazla 10 dakikada bir, CV başına son 30 kayıt */
 export async function maybeSnapshot(cv: CV): Promise<void> {
   const last = await db.snapshots.where('cvId').equals(cv.id).last();
   if (last && Date.now() - last.at < 10 * 60 * 1000) return;
@@ -67,7 +66,6 @@ export async function maybeSnapshot(cv: CV): Promise<void> {
   const all = await db.snapshots.where('cvId').equals(cv.id).sortBy('at');
   if (all.length > 30) await db.snapshots.bulkDelete(all.slice(0, all.length - 30).map((s) => s.id!));
 }
-/** Depolama dolduğunda: her CV için yalnızca son 5 sürümü bırak */
 export async function pruneSnapshots(): Promise<void> {
   const all = await db.snapshots.orderBy('at').toArray();
   const byCv = new Map<string, number[]>();
@@ -83,7 +81,6 @@ export async function wipeAll(): Promise<void> {
   await db.delete();
 }
 
-/* ---------------- başvurular ---------------- */
 export const listApplications = () => db.applications.orderBy('updatedAt').reverse().toArray();
 export async function saveApplication(a: ApplicationRow): Promise<number> {
   return db.applications.put({ ...a, updatedAt: Date.now() });

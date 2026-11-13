@@ -1,6 +1,6 @@
 import type { Lang } from '../model/types';
+import { unicodeWords } from './unicodeWord';
 
-/** Madde yazımı için kural tabanlı ipuçları (yapay zekâ yok, tamamen yerel). */
 export interface Hint {
   kind: 'weak' | 'number' | 'long' | 'short' | 'first-person' | 'passive' | 'vague';
   text: string;
@@ -26,12 +26,12 @@ export const STRONG_VERBS: Record<Lang, { group: string; verbs: string[] }[]> = 
 
 const WEAK: Record<Lang, { re: RegExp; label: string }[]> = {
   tr: [
-    { re: /\bsorumlu(yd|ydu)?(um|m)\b|\bsorumlu oldum\b|\bsorumluluğundaydı\b/i, label: '“sorumluydum”' },
-    { re: /\bgörev (aldım|yaptım)\b/i, label: '“görev aldım”' },
-    { re: /\byardımcı oldum\b|\byardım ettim\b/i, label: '“yardımcı oldum”' },
-    { re: /\bilgilendim\b/i, label: '“ilgilendim”' },
-    { re: /\bçalıştım\b/i, label: '“çalıştım”' },
-    { re: /\bbulundum\b/i, label: '“bulundum”' },
+    { re: unicodeWords(/\bsorumlu(yd|ydu)?(um|m)\b|\bsorumlu oldum\b|\bsorumluluğundaydı\b/i), label: '“sorumluydum”' },
+    { re: unicodeWords(/\bgörev (aldım|yaptım)\b/i), label: '“görev aldım”' },
+    { re: unicodeWords(/\byardımcı oldum\b|\byardım ettim\b/i), label: '“yardımcı oldum”' },
+    { re: unicodeWords(/\bilgilendim\b/i), label: '“ilgilendim”' },
+    { re: unicodeWords(/\bçalıştım\b/i), label: '“çalıştım”' },
+    { re: unicodeWords(/\bbulundum\b/i), label: '“bulundum”' },
   ],
   en: [
     { re: /\bresponsible for\b/i, label: '“responsible for”' },
@@ -42,8 +42,10 @@ const WEAK: Record<Lang, { re: RegExp; label: string }[]> = {
   ],
 };
 
+const PASSIVE_TR = unicodeWords(/\b\w+(ıldı|ildi|uldu|üldü|ındı|indi|undu|ündü)\b[.!]?$/i);
+
 const VAGUE: Record<Lang, RegExp> = {
-  tr: /\b(çeşitli|bazı|vb\.?|vs\.?|gibi işler|birçok|pek çok)\b/i,
+  tr: unicodeWords(/\b(çeşitli|bazı|vb\.|vs\.|vb|vs|gibi işler|birçok|pek çok)(?!\w)/i),
   en: /\b(various|several|etc\.?|many|some)\b/i,
 };
 
@@ -64,7 +66,7 @@ export function bulletHints(text: string, lang: Lang): Hint[] {
   }
   if (lang === 'tr' && /\b(ben|benim)\b/i.test(t)) hints.push({ kind: 'first-person', text: '“Ben” demene gerek yok; fiil zaten senin yaptığını anlatıyor.' });
   if (lang === 'en' && /^(i|my)\b/i.test(t)) hints.push({ kind: 'first-person', text: 'Drop “I”; start with the verb.' });
-  if (lang === 'tr' && /\b\w+(ıldı|ildi|uldu|üldü|ındı|indi|undu|ündü)\b[.!]?$/i.test(t))
+  if (lang === 'tr' && PASSIVE_TR.test(t))
     hints.push({ kind: 'passive', text: 'Edilgen cümle (“yapıldı, sağlandı”). “Yaptım, sağladım” gibi etken anlatım daha güçlü durur.' });
   if (!/\d/.test(t))
     hints.push({

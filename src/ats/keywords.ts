@@ -1,17 +1,10 @@
-/**
- * İlan metninden anahtar kelime çıkarır ve CV metniyle karşılaştırır.
- * Tamamen yerel ve kural tabanlıdır: sözlük + biçim ipuçları + sıklık.
- */
 import type { CV } from '../model/types';
 import { totalExperienceMonths } from './quality';
 
-/** Eşleştirme için küçük harf: Türkçe kurallarla küçült, ı/i farkını yok say (ITIL → itil) */
 const lower = (t: string) => t.toLocaleLowerCase('tr-TR').replace(/ı/g, 'i');
 
-/** Ehliyet, askerlik, dil gibi şartlar anahtar kelime değil, ayrıca denetlenir */
 const REQUIREMENT_TERMS = new Set(['ehliyet', 'b sinifi ehliyet', 'askerlik', 'seyahat engeli', 'ingilizce', 'almanca', 'fransizca', 'arapça', 'rusça']);
 
-/** Sık geçen meslek / teknoloji terimleri (çok kelimeliler önce eşleşir) */
 const DICTIONARY = `
 active directory|group policy|windows server|microsoft 365|office 365|exchange server|exchange online|azure ad|entra id|intune|sccm|mecm|wsus|dhcp|dns|tcp/ip|vlan|vpn|firewall|fortigate|palo alto|cisco|ccna|ccnp|mcsa|mcse|itil|comptia|vmware|vsphere|esxi|hyper-v|proxmox|veeam|backup|yedekleme|linux|ubuntu|centos|red hat|bash|powershell|python|java|javascript|typescript|c#|c++|.net|asp.net|node.js|react|angular|vue|next.js|html|css|sass|tailwind|php|laravel|symfony|go|golang|rust|kotlin|swift|flutter|react native|django|flask|spring|spring boot|sql|t-sql|pl/sql|mysql|postgresql|mssql|sql server|oracle|mongodb|redis|elasticsearch|kafka|rabbitmq|docker|kubernetes|helm|terraform|ansible|jenkins|gitlab ci|github actions|ci/cd|devops|aws|azure|google cloud|gcp|git|jira|confluence|scrum|agile|kanban|rest|rest api|graphql|microservices|mikroservis|unit test|birim test|tdd|oop|nesne yönelimli|design patterns|tasarım desenleri|clean code|figma|adobe xd|photoshop|illustrator|indesign|after effects|premiere|blender|unity|unreal|roblox|lua|autocad|solidworks|catia|revit|sketchup|3ds max|matlab|plc|scada|power bi|tableau|qlik|excel|ileri excel|makro|vba|pivot|sap|sap fi|sap mm|sap sd|logo|netsis|mikro|luca|eta|erp|crm|salesforce|hubspot|seo|sem|google ads|meta ads|google analytics|e-ticaret|e-commerce|dijital pazarlama|sosyal medya|içerik pazarlaması|ön muhasebe|genel muhasebe|maliyet muhasebesi|bordro|e-fatura|e-defter|e-arşiv|kdv|beyanname|mutabakat|bütçe|raporlama|finansal analiz|dış ticaret|ithalat|ihracat|gümrük|lojistik|tedarik zinciri|satın alma|stok yönetimi|depo yönetimi|insan kaynakları|işe alım|performans yönetimi|eğitim planlama|müşteri ilişkileri|müşteri hizmetleri|çağrı merkezi|satış|b2b|b2c|kurumsal satış|saha satış|proje yönetimi|pmp|prince2|iş analizi|veri analizi|makine öğrenmesi|machine learning|deep learning|derin öğrenme|yapay zeka|nlp|computer vision|pandas|numpy|scikit-learn|tensorflow|pytorch|istatistik|iso 9001|iso 27001|iso 14001|kvkk|gdpr|iş güvenliği|isg|6 sigma|six sigma|lean|yalın üretim|kalite kontrol|ar-ge|teknik resim|ingilizce|almanca|fransızca|arapça|rusça|ehliyet|b sınıfı ehliyet|askerlik|seyahat engeli|vardiya|takım çalışması|iletişim becerisi|problem çözme|analitik düşünme|liderlik|sunum|ms office|word|powerpoint|outlook|teams|sharepoint|onedrive|google workspace|help desk|helpdesk|son kullanıcı desteği|teknik destek|donanım|yazıcı|ip telefon|network|ağ yönetimi|sistem yönetimi|sunucu|siber güvenlik|penetrasyon testi|siem|soc|antivirüs|endpoint|mdm|bulut|cloud|sanallaştırma|redux|mobx|zustand|jest|vitest|cypress|playwright|selenium|webpack|vite|storybook|design system|tasarım sistemi|nuxt|svelte|express|nestjs|fastapi|prisma|supabase|firebase|android|ios|xamarin|wordpress|shopify|magento|ui/ux|ux|ui|a/b test|kpi|okr|bigquery|snowflake|databricks|spark|hadoop|airflow|etl|data warehouse|veri ambarı|nginx|apache|iis|zabbix|grafana|prometheus|nagios|splunk|wireshark|okta|keycloak|oauth|sso|ldap|radius|wi-fi|wifi|lan|wan|sd-wan|mpls|ospf|bgp|switch|router|kesintisiz güç kaynağı|ups|cctv|pbx|voip|3cx
 `
@@ -54,7 +47,6 @@ const STOP_EN = new Set(
     .map((w) => w.toLowerCase()),
 );
 
-/** Türkçe ek atma (hafif): "sistemlerinde" → "sistem", "Linux'ta" → "linux" */
 export function stemTr(word: string): string {
   let w = word.replace(/['’].*$/, '');
   const suffixes = ['larından', 'lerinden', 'larında', 'lerinde', 'larına', 'lerine', 'ları', 'leri', 'ların', 'lerin', 'lar', 'ler', 'ından', 'inden', 'undan', 'ünden', 'ında', 'inde', 'unda', 'ünde', 'ına', 'ine', 'una', 'üne', 'nın', 'nin', 'nun', 'nün', 'dan', 'den', 'tan', 'ten', 'da', 'de', 'ta', 'te', 'ını', 'ini', 'unu', 'ünü', 'sı', 'si', 'su', 'sü', 'ı', 'i', 'u', 'ü'];
@@ -70,8 +62,8 @@ export function stemTr(word: string): string {
 }
 
 export interface Keyword {
-  term: string; // görüntülenen biçim
-  key: string; // eşleştirme için normal biçim
+  term: string;
+  key: string;
   kind: 'title' | 'dictionary' | 'tech' | 'frequent';
   count: number;
 }
@@ -89,14 +81,12 @@ export function extractKeywords(ad: string, limit = 30): Keyword[] {
     if (cur) cur.count += count;
     else found.set(key, { key, term, kind, count });
   };
-  // 0) ilk satır genelde pozisyon adıdır
   let masked = low;
   const firstLine = text.split('\n').map((l) => l.trim()).find(Boolean) ?? '';
   if (firstLine && firstLine.length <= 60 && firstLine.split(/\s+/).length <= 6 && !/[.:;]$/.test(firstLine)) {
     add(lower(firstLine), firstLine, 'title', 1);
     masked = masked.split(lower(firstLine)).join(' ');
   }
-  // 1) sözlük (kelime sınırlarıyla)
   for (const term of DICTIONARY) {
     const esc = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     const re = new RegExp(`(^|[^\\p{L}\\p{N}])${esc}(?=$|[^\\p{L}\\p{N}+#])`, 'gu');
@@ -106,28 +96,25 @@ export function extractKeywords(ad: string, limit = 30): Keyword[] {
       masked = masked.replace(re, '$1 ');
     }
   }
-  // 2) teknik görünen kelimeler (CamelCase, BÜYÜK, rakam/sembol içeren) – orijinal metinden
   const orig = text.match(tokenRe) ?? [];
   for (const tok of orig) {
     const clean = tok.replace(/['’].*$/, '').replace(/[.,;:]+$/, '');
     if (clean.length < 2) continue;
     const l = lower(clean);
     if (STOP_TR.has(l) || STOP_EN.has(l) || /^\d+$/.test(clean)) continue;
-    if (!masked.includes(l)) continue; // sözlükte zaten yakalandı
+    if (!masked.includes(l)) continue;
     if (/^\d+[+%]?$/.test(clean) || PLACES.has(l)) continue;
     const techy = /[a-zçğıöşü][A-ZÇĞİÖŞÜ]/.test(clean) || /^[A-ZÇĞİÖŞÜ0-9+#./-]{2,}$/.test(clean) || /[+#]|\d/.test(clean) || /\.[a-z]{2,}$/i.test(clean);
     if (techy) add(l, clean, 'tech');
   }
-  // 2b) cümle ortasında büyük harfle başlayan özel adlar (Redux, Jest…)
   const properRe = /(?<![.!?:\n•\-–*]\s*)(?<=\s)([A-ZÇĞİÖŞÜ][a-zçğıöşü]{2,}[A-Za-z0-9]*)/gu;
   for (const m of text.matchAll(properRe)) {
     const w = m[1];
     const l = lower(w);
     if (STOP_TR.has(l) || STOP_EN.has(l) || PLACES.has(l) || !masked.includes(l) || found.has(l)) continue;
-    if (/[çğıöşü]/i.test(w)) continue; // Türkçe özel ad/terim çoğunlukla sözlükte ya da sık kelimelerde yakalanır
+    if (/[çğıöşü]/i.test(w)) continue;
     add(l, w, 'tech');
   }
-  // 3) sık geçen kelimeler (≥2 kez), ek atılmış hâliyle
   const counts = new Map<string, { n: number; sample: string }>();
   for (const tok of masked.match(tokenRe) ?? []) {
     const l = tok.replace(/['’].*$/, '');
@@ -145,12 +132,10 @@ export function extractKeywords(ad: string, limit = 30): Keyword[] {
 }
 
 function prettyTerm(term: string, original: string): string {
-  // lower() karakter sayısını değiştirmediği için aynı konumdan orijinal yazımı al
   const i = lower(original).indexOf(term);
   return i >= 0 ? original.slice(i, i + term.length) : term;
 }
 
-/** CV metninde anahtar kelime var mı? (ek almış hâller de sayılır) */
 export function cvHas(cvText: string, k: Keyword): boolean {
   const low = lower(cvText);
   if (low.includes(k.key)) return true;
@@ -174,7 +159,6 @@ export function matchJob(ad: string, cvText: string, cv: CV): MatchResult {
   const got = kws.filter((k) => k.found).reduce((n, k) => n + weight(k), 0);
   const requirements: MatchResult['requirements'] = [];
   const low = lower(ad);
-  // "en az 3 yıl", "minimum 5 years", "3+ yıl"
   const yr = /(?:en az|minimum|asgari|min\.?|at least)\s*(\d{1,2})\s*\+?\s*(?:y[ıi]l|sene|years?)|(\d{1,2})\s*\+\s*(?:y[ıi]l|years?)|(\d{1,2})\s*(?:y[ıi]l|sene)\s*(?:ve üzeri|deneyim|tecrübe)/i.exec(low);
   if (yr) {
     const need = parseInt(yr[1] || yr[2] || yr[3], 10);

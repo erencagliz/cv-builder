@@ -1,10 +1,14 @@
 import { EditorPage } from './editor/EditorPage';
 import { Home } from './editor/Home';
 import { Viewer } from './share/Viewer';
-import { ToastProvider, useRoute } from './ui/app';
+import { ToastProvider } from './ui/ToastProvider';
+import { useRoute } from './ui/router';
 
 export default function App() {
   const route = useRoute();
-  const edit = /^\/duzenle\/([\w-]+)/.exec(route);
-  return <ToastProvider>{edit ? <EditorPage key={edit[1]} id={edit[1]} /> : route.startsWith('/goruntule') ? <Viewer /> : <Home />}</ToastProvider>;
+  return (
+    <ToastProvider>
+      {route.name === 'edit' && route.id ? <EditorPage key={route.id} id={route.id} /> : route.name === 'view' ? <Viewer /> : <Home />}
+    </ToastProvider>
+  );
 }

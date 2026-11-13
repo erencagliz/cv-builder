@@ -15,7 +15,7 @@ interface Step {
   design?: boolean;
 }
 
-export const STEPS: Step[] = [
+const STEPS: Step[] = [
   {
     id: 'profile',
     title: 'Profil',

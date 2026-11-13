@@ -9,12 +9,12 @@ import { buildReport, potentialGain, type Report, type Finding, type BulletScore
 import { useFocus } from '../store/focus';
 import { uiLocale } from '../i18n';
 import { saveApplication, newApplication } from '../store/db';
-import { guessFromPosting } from './Applications';
+import { guessFromPosting } from '../ats/posting';
 import { matchJob } from '../ats/keywords';
 import { useEditor } from '../store/editor';
 import { newEntry } from '../model/defaults';
 import { Icon, AutoTextarea } from '../ui/fields';
-import { useToast } from '../ui/app';
+import { useToast } from '../ui/toast';
 
 const LEVEL_ICON: Record<Check['level'], string> = { ok: 'check', warn: 'alert', error: 'x', info: 'info' };
 
@@ -54,7 +54,6 @@ function ScoreRing({ value, label }: { value: number; label: string }) {
   );
 }
 
-/* ======================= ATS ve CV analizi ======================= */
 function useAddSkill() {
   const update = useEditor((s) => s.update);
   const toast = useToast();
@@ -393,7 +392,6 @@ export function AtsView({ cv }: { cv: CV }) {
   );
 }
 
-/* ======================= İlan eşleştirme ======================= */
 export function JobMatchView({ cv }: { cv: CV }) {
   const update = useEditor((s) => s.update);
   const toast = useToast();

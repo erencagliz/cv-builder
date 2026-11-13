@@ -1,6 +1,5 @@
 import { create } from 'zustand';
 
-/** Analiz ekranındaki "Düzelt" düğmesinin düzenleyicide ilgili bölümü/girdiyi açması için */
 export interface FocusRequest {
   section: string;
   entryId?: string;

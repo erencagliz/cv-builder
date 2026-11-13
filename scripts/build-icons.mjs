@@ -1,10 +1,6 @@
-// İkon setini src/render/icons.json'a gömer.
-// Genel ikonlar: Lucide (ISC) · Marka logoları: Simple Icons (CC0)
-// Kullanım: node scripts/build-icons.mjs <lucide-static/icons klasörü> <simple-icons/icons klasörü>
 import fs from 'fs';
 const [lucideDir, simpleDir] = process.argv.slice(2);
 const GENERIC = {
-  // id: Türkçe ad
   'briefcase': 'Çanta', 'briefcase-business': 'İş', 'building-2': 'Bina', 'graduation-cap': 'Kep', 'school': 'Okul',
   'book-open': 'Kitap', 'library': 'Kütüphane', 'wrench': 'Anahtar', 'hammer': 'Çekiç', 'settings': 'Ayarlar',
   'code': 'Kod', 'terminal': 'Terminal', 'laptop': 'Dizüstü', 'monitor': 'Monitör', 'server': 'Sunucu',

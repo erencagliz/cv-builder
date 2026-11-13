@@ -5,7 +5,6 @@ import { scoreBullet } from '../ats/report';
 import { ExamplePicker } from './ExamplePicker';
 import { maskPhone, isCompletePhone } from '../model/links';
 
-/* ---------------- temel alan ---------------- */
 export function Field({
   label,
   hint,
@@ -205,7 +204,6 @@ export function Checkbox({ label, checked, onChange, hint }: { label: ReactNode;
   );
 }
 
-/* ---------------- telefon (maskeli) ---------------- */
 export function PhoneInput({ label, value, onChange, hint }: { label: string; value: string; onChange: (v: string) => void; hint?: ReactNode }) {
   const id = useId();
   const [touched, setTouched] = useState(false);
@@ -231,7 +229,6 @@ export function PhoneInput({ label, value, onChange, hint }: { label: string; va
           if (/^\+90 \(?$/.test(value.trim())) onChange('');
         }}
         onKeyDown={(e) => {
-          // Biçim karakterinin (parantez, boşluk) arkasından silerken bir rakamı da sil
           if (e.key !== 'Backspace') return;
           const el = e.currentTarget;
           const pos = el.selectionStart ?? 0;
@@ -250,7 +247,6 @@ export function PhoneInput({ label, value, onChange, hint }: { label: string; va
           const next = maskPhone(raw);
           onChange(next);
           if (!atEnd) {
-            // Ortada düzenlerken imleci rakam sayısına göre koru
             const digitsBefore = raw.slice(0, e.target.selectionStart ?? 0).replace(/\D/g, '').length;
             requestAnimationFrame(() => {
               const el = ref.current;
@@ -267,7 +263,6 @@ export function PhoneInput({ label, value, onChange, hint }: { label: string; va
   );
 }
 
-/* ---------------- ay / yıl ---------------- */
 const MONTHS_TR = ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'];
 const thisYear = new Date().getFullYear();
 const YEARS = Array.from({ length: 70 }, (_, i) => String(thisYear + 6 - i));
@@ -324,7 +319,6 @@ export function MonthPicker({
   );
 }
 
-/** Gün / Ay / Yıl seçici: her tarayıcıda aynı, Türkçe ve belirsizliksiz (04/12 sorunu yok). Değer: YYYY-MM-DD */
 export function DateField({ label, value, onChange, minYear = 1940, maxYear = new Date().getFullYear(), hint, wide = true }: { label: string; value: string; onChange: (v: string) => void; minYear?: number; maxYear?: number; hint?: ReactNode; wide?: boolean }) {
   const id = useId();
   const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value || '');
@@ -414,7 +408,6 @@ export function RangeField({ value, onChange, currentLabel = 'Devam ediyor' }: {
   );
 }
 
-/* ---------------- etiketler ---------------- */
 export function TagsInput({
   label,
   value,
@@ -484,7 +477,6 @@ export function TagsInput({
   );
 }
 
-/* ---------------- maddeler ---------------- */
 export function BulletsEditor({
   label,
   value,
@@ -582,7 +574,6 @@ export function BulletsEditor({
   );
 }
 
-/* ---------------- kaydırıcı ---------------- */
 export function Slider({
   label,
   value,
@@ -660,7 +651,6 @@ export function Segmented<T extends string>({
   );
 }
 
-/* ---------------- ikonlar ---------------- */
 const PATHS: Record<string, string> = {
   plus: 'M12 5v14M5 12h14',
   x: 'M6 6l12 12M18 6L6 18',

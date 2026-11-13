@@ -1,4 +1,3 @@
-/* Yazı tipi önizlemeleri ve arayüz için; dosyalar yalnızca kullanıldığında indirilir */
 @font-face{font-family:'Roboto';src:url('/fonts/roboto/regular.ttf') format('truetype');font-weight:400;font-style:normal;font-display:swap}
 @font-face{font-family:'Open Sans';src:url('/fonts/open-sans/regular.ttf') format('truetype');font-weight:400;font-style:normal;font-display:swap}
 @font-face{font-family:'Source Sans 3';src:url('/fonts/source-sans-3/regular.ttf') format('truetype');font-weight:400;font-style:normal;font-display:swap}

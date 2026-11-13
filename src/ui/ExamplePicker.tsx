@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from 'react';
 import { PROFESSIONS } from '../content/professions';
 import { Icon } from './fields';
 
-/** Meslek seçip hazır örnek maddelerden ekleme. [Köşeli parantezli] yerler kullanıcı tarafından doldurulur. */
 export function ExamplePicker({ onPick }: { onPick: (text: string) => void }) {
   const [open, setOpen] = useState(false);
   const [prof, setProf] = useState(() => {
@@ -36,7 +35,6 @@ export function ExamplePicker({ onPick }: { onPick: (text: string) => void }) {
               try {
                 localStorage.setItem('example-prof', e.target.value);
               } catch {
-                /* depolama kapalı olabilir */
               }
             }}
           >

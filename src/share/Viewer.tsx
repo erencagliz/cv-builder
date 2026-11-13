@@ -7,10 +7,11 @@ import { renderPdf, dataUrlToBytes } from '../render/client';
 import { saveCV } from '../store/db';
 import { uid } from '../model/defaults';
 import { Icon } from '../ui/fields';
-import { downloadBlob, navigate, usePageMeta, useToast } from '../ui/app';
+import { downloadBlob } from '../ui/download';
+import { go, usePageMeta } from '../ui/router';
+import { useToast } from '../ui/toast';
 import { APP_NAME } from '../config';
 
-/** Paylaşım bağlantısıyla açılan salt okunur CV görünümü */
 export function Viewer() {
   const [cv, setCv] = useState<CV | null>(null);
   const [error, setError] = useState('');
@@ -53,14 +54,14 @@ export function Viewer() {
     if (!cv) return;
     const mine = { ...cv, id: uid(), name: name ? `${name} (paylaşılan)` : 'Paylaşılan CV', createdAt: Date.now(), updatedAt: Date.now() };
     await saveCV(mine);
-    navigate(`/duzenle/${mine.id}`);
+    go({ name: 'edit', id: mine.id });
     toast('CV’lerine kopyalandı; artık düzenleyebilirsin.');
   };
 
   return (
     <div className="viewer">
       <header className="topbar viewer-bar">
-        <button className="btn ghost" onClick={() => navigate('/')} title={`${APP_NAME} ile kendi CV’ni hazırla`}>
+        <button className="btn ghost" onClick={() => go({ name: 'home' })} title={`${APP_NAME} ile kendi CV’ni hazırla`}>
           <Icon name="files" /> <span className="hide-sm">{APP_NAME}</span>
         </button>
         <strong className="viewer-name">{name ? `${name} – CV` : 'Paylaşılan CV'}</strong>
@@ -80,7 +81,7 @@ export function Viewer() {
         <div className="empty-state">
           <h1>CV açılamadı</h1>
           <p>{error}</p>
-          <button className="btn primary" onClick={() => navigate('/')}>
+          <button className="btn primary" onClick={() => go({ name: 'home' })}>
             Kendi CV’ni hazırla
           </button>
         </div>

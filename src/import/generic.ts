@@ -1,18 +1,8 @@
-/**
- * Herhangi bir CV'yi (PDF, Word, düz metin) yapıya çevirir — kural tabanlı, tamamen yerel.
- *
- * 1. Satırlar: PDF'te metin parçaları koordinatlarından satırlara toplanır, iki sütunlu düzen sezilir;
- *    büyük boşluklar sekme (\t) olur (sağa yaslı tarih, "Grup  yetenekler" gibi).
- * 2. Üst bilgi: ilk bölüm başlığından önceki satırlardan ad, unvan, e-posta, telefon, bağlantılar, konum.
- * 3. Bölümler: Türkçe/İngilizce başlık sözlüğüyle (harf aralıklı "D E N E Y İ M" dahil) ayrılır.
- * 4. Girdiler: tarih aralıkları ve madde işaretleri girdileri böler; aynı şirkette birden çok rol tanınır.
- */
 import type { CV, DateRange, Entry, MilitaryStatus } from '../model/types';
 import { emptyCV, newEntry, uid } from '../model/defaults';
 import { formatPhone } from '../model/links';
 import type { PdfText, TextItem } from '../ats/pdfText';
 
-/* =============================== yardımcılar =============================== */
 const fold = (t: string) =>
   t
     .toLocaleLowerCase('tr-TR')
@@ -27,18 +17,14 @@ const fold = (t: string) =>
     .replace(/[ûÛ]/g, 'u')
     .replace(/\s+/g, ' ')
     .trim();
-/** Türkçe harfler \b'yi bozar: önce ASCII'ye katla, sonra ara */
 const has = (re: RegExp, t: string) => re.test(fold(t));
-/** Konumları koruyan katlama (dizinle orijinal metinden kesmek için) */
 const foldKeep = (t: string) => [...t].map((ch) => (fold(ch) || ch).charAt(0) || ch).join('');
-/** Parçanın tamamı bir konum mu? ("İstanbul", "Ataşehir, İstanbul") — "İstanbul Üniversitesi" değil */
 const isCity = (t: string) => LOC_ONLY.test(fold(t).replace(/[()]/g, '').trim());
-const clean = (t: string) => t.replace(/[  -​]/g, ' ').replace(/[ ]{2,}/g, ' ').trim();
+const clean = (t: string) => t.replace(/[\u00a0\u2002-\u200b]/g, ' ').replace(/[ ]{2,}/g, ' ').trim();
 const BULLET = /^\s*(?:[•●▪■◦○◆♦►▸➢✓✔\-–—*·]|\d{1,2}[.)])\s+/;
 const isBullet = (l: string) => BULLET.test(l);
 const stripBullet = (l: string) => l.replace(BULLET, '').trim();
 
-/* =============================== tarih =============================== */
 const MONTHS: Record<string, number> = {};
 [
   ['ocak', 'oca', 'january', 'jan', 'januar'],
@@ -55,7 +41,6 @@ const MONTHS: Record<string, number> = {};
   ['aralik', 'ara', 'december', 'dec', 'dez'],
 ].forEach((names, i) => names.forEach((n) => (MONTHS[n] = i + 1)));
 
-// Tarih eşleştirme ASCII'ye katlanmış metinde yapılır (Türkçe büyük İ / \b sorunları olmasın), kesim orijinal metinden
 const MON = `(?:${Object.keys(MONTHS).sort((x, y) => y.length - x.length).join('|')})\\.?`;
 const ONE_DATE = `(?:${MON}\\s*\\d{4}|\\d{1,2}\\s*[./-]\\s*\\d{4}|\\d{4}\\s*[./-]\\s*\\d{1,2}(?!\\d)|\\d{4})`;
 const PRESENT = '(?:halen|gunumuz|devam ediyor|devam|su an(?:da)?|present|current|now|today|ongoing|heute)';
@@ -75,7 +60,6 @@ function parseOne(t: string): string {
   return m && +m[1] > 1950 && +m[1] < 2100 ? m[1] : '';
 }
 
-/** Satırdaki tarih aralığını bulur ve satırdan çıkarır */
 export function takeRange(line: string): { range: DateRange | null; rest: string } {
   const m = RANGE_RE.exec(kfold(line));
   if (m) {
@@ -109,7 +93,6 @@ function cut(line: string, at: number, len: number) {
     .trim();
 }
 
-/* =============================== başlıklar =============================== */
 type Key =
   | 'summary' | 'experience' | 'education' | 'skills' | 'languages' | 'certificates' | 'projects' | 'courses' | 'volunteer'
   | 'awards' | 'publications' | 'talks' | 'memberships' | 'references' | 'hobbies' | 'personal' | 'contact';
@@ -138,21 +121,17 @@ for (const [k, list] of Object.entries(HEADS)) for (const h of list) HEAD_MAP.se
 export function headingKey(line: string): Key | null {
   let t = line.trim();
   if (t.length > 48 || isBullet(t)) return null;
-  // "D E N E Y İ M" → "DENEYİM"
   if (/^(\S\s){3,}\S$/.test(t)) t = t.replace(/\s/g, '');
   const f = fold(t).replace(/[:：.\s]+$/, '').replace(/^[#\d.)\s]+/, '');
   return HEAD_MAP.get(f) ?? null;
 }
 
-/* =============================== satır üretimi =============================== */
-/** pdf.js parçalarından satırlar; iki sütunlu düzeni sezer */
 export function pdfLines(pdf: PdfText): string[] {
   const out: string[] = [];
   const pages = new Map<number, TextItem[]>();
   for (const it of pdf.items) if (it.str.trim()) pages.set(it.page, [...(pages.get(it.page) ?? []), it]);
   for (const items of pages.values()) {
     const W = pdf.pageWidth;
-    // sütun aralığı: dikeyde neredeyse hiçbir parçanın kesmediği x
     let split: number | null = null;
     let best = Infinity;
     for (let x = W * 0.22; x <= W * 0.6; x += 4) {
@@ -160,7 +139,6 @@ export function pdfLines(pdf: PdfText): string[] {
       const left = items.filter((i) => i.x + i.width <= x).length;
       const right = items.filter((i) => i.x >= x).length;
       if (left > items.length * 0.15 && right > items.length * 0.25 && crossing < items.length * 0.06 && crossing < best) {
-        // sol taraf gerçekten ayrı bir sütun mu? (sağdaki satırların çoğu sol taraf boşken de devam etmeli)
         const leftYs = new Set(items.filter((i) => i.x + i.width <= x).map((i) => Math.round(i.y)));
         const rightYs = new Set(items.filter((i) => i.x >= x).map((i) => Math.round(i.y)));
         const shared = [...rightYs].filter((y) => leftYs.has(y)).length;
@@ -172,7 +150,6 @@ export function pdfLines(pdf: PdfText): string[] {
     }
     const groups: TextItem[][] = split === null ? [items] : [items.filter((i) => i.x < split! - 1 && i.x + i.width > split! + 1), items.filter((i) => i.x + i.width <= split! + 1 && !(i.x < split! - 1 && i.x + i.width > split! + 1)), items.filter((i) => i.x >= split! - 1 && !(i.x < split! - 1 && i.x + i.width > split! + 1))];
     if (split !== null) {
-      // sütunu kesen (tam genişlik) satırlar en üstteyse onları başa al; sonra ad/iletişim hangi sütundaysa o
       const [full, left, right] = groups;
       const order = left.length && right.length && Math.max(...left.map((i) => i.y)) > Math.max(...right.map((i) => i.y)) + 20 ? [full, left, right] : [full, right, left];
       for (const g of order) out.push(...linesOf(g));
@@ -205,7 +182,6 @@ function linesOf(items: TextItem[]): string[] {
   });
 }
 
-/** .docx → satırlar (paragraf başına bir satır; liste paragrafları "• " ile) */
 export async function docxLines(data: Uint8Array): Promise<string[]> {
   const JSZip = (await import('jszip')).default;
   const zip = await JSZip.loadAsync(data);
@@ -232,7 +208,6 @@ export async function docxLines(data: Uint8Array): Promise<string[]> {
 
 export const textLines = (t: string) => t.split(/\r?\n/).map((l) => clean(l.replace(/ *\t */g, '\t'))).filter(Boolean);
 
-/* =============================== alan tanıma =============================== */
 const EMAIL = /[\w.+-]+@[\w-]+(?:\.[\w-]+)+/;
 const PHONE = /(?:\+\d{1,3}[\s.-]?)?(?:\(?0?\d{3}\)?[\s.-]?)\d{3}[\s.-]?\d{2}[\s.-]?\d{2}\b/;
 const URL = /\b(?:https?:\/\/)?(?:www\.)?(?:[a-z0-9-]+\.)+(?:com|net|org|io|dev|me|app|co|tr|edu|info|ai|design|page|site|xyz)(?:\.[a-z]{2})?(?:\/[^\s,;|·)]*)?/gi;
@@ -240,9 +215,7 @@ const CITIES = 'istanbul|ankara|izmir|bursa|antalya|kocaeli|konya|adana|gaziante
 const LOC_ONLY = new RegExp(`^(?:[a-z.-]+, ?)?(?:${CITIES})(?:, ?(?:turkiye|turkey|tr|uk|germany|almanya))?$`);
 const CITY_RE = new RegExp(`(?:^|[\\s,·|/])((?:[A-ZÇĞİÖŞÜ][\\wçğıöşü.-]+,\\s*)?(?:${CITIES}))(?:[\\s,·|/]|$)`, 'i');
 
-/** Yalnızca şirket adında geçen ipuçları (unvanlarda da geçen "yazılım, lojistik" gibi kelimeler bilerek yok) */
 const COMPANY_HINT = /(\ba\.?\s?s\.?(?=\s|$|,)|\bltd\b|\bsti\b|\binc\b|\bllc\b|\bgmbh\b|\bcorp\b|\bholding\b|\bgroup\b|\bgrup\b|\bbankasi\b|\bbank\b|hastanesi\b|belediyesi\b|bakanligi\b|universitesi\b|\bvakfi\b|\bdernegi\b|\bsan\.?\s?ve\s?tic\b|\bajansi\b|\bagency\b|\bconsulting\b|\btechnologies\b)/;
-/** Unvanlarda geçen kelimeler */
 const TITLE_HINT = /\b(uzman\w*|muhendis\w*|gelistirici\w*|yonetici\w*|mudur\w*|sorumlu\w*|asistan\w*|stajyer|sef\w*|temsilci\w*|danisman\w*|koordinator\w*|analist\w*|tasarimci\w*|teknisyen\w*|operator\w*|ogretmen\w*|memur\w*|elemani|specialist|engineer|developer|manager|analyst|consultant|coordinator|designer|intern|assistant|director|lead|officer|representative|administrator|technician|architect|head of)\b/;
 const SCHOOL_HINT = /(universite|university|lise|lisesi|high school|okul|school|fakulte|faculty|college|kolej|institute|enstitu|akademi|academy|\bmyo\b|meslek yuksekokulu|yuksekokul)/;
 const DEGREE_WORDS: [RegExp, string][] = [
@@ -253,7 +226,6 @@ const DEGREE_WORDS: [RegExp, string][] = [
   [/(\blise\b|lisesi|high school)/, 'highschool'],
   [/(sertifika programi|certificate program)/, 'certificate'],
 ];
-/** Yalnızca derece adından oluşan parça (alan değil) */
 const DEGREE_ONLY = /^(on ?lisans|lisans|yuksek lisans|doktora|lise|associate'?s?( degree)?|bachelor'?s?( degree)?|master'?s?( degree)?|ph\.?\s?d\.?|bsc|b\.sc\.?|msc|m\.sc\.?|ba|ma|mba|beng)$/;
 const EMP: [RegExp, string][] = [
   [/\b(tam zamanli|full[- ]time)\b/, 'fulltime'],
@@ -262,7 +234,6 @@ const EMP: [RegExp, string][] = [
   [/\b(serbest|freelance|kendi hesabima)\b/, 'freelance'],
   [/\b(sozlesmeli|contract)\b/, 'contract'],
 ];
-/** Yalnızca çalışma tipi/şekli yazan parça ("Tam zamanlı", "Hibrit") — "Stajyer" gibi unvanlar değil */
 const WORK_ONLY = /^(tam zamanli|yari zamanli|full[- ]time|part[- ]time|staj|internship|serbest|freelance|sozlesmeli|contract|hibrit|hybrid|uzaktan|remote|ofisten|on[- ]site)$/;
 const MODE: [RegExp, string][] = [
   [/\b(uzaktan|remote)\b/, 'remote'],
@@ -282,7 +253,6 @@ const LEVELS: [RegExp, string][] = [
 ];
 const EXAMS = /\b(YDS|YÖKDİL|YOKDIL|IELTS|TOEFL(?: iBT)?|TOEIC|PTE|Cambridge|Goethe|DELF|DALF|TestDaF|Duolingo)\b\s*[:\-–]?\s*([\d.,]+)?/i;
 
-/** Başlık satırından pozisyon / kurum ayırımı */
 function splitHead(t: string): string[] {
   return t
     .replace(/\s*\(([^()]*)\)/g, '\t$1')
@@ -291,11 +261,9 @@ function splitHead(t: string): string[] {
     .filter((p) => p && !/^[·|,–-]$/.test(p));
 }
 
-/* =============================== ana çözümleyici =============================== */
 export interface ParseResult {
   cv: CV;
   found: string[];
-  /** 0-1 arası: ne kadarının tanınabildiği */
   confidence: number;
 }
 
@@ -307,7 +275,6 @@ export function parseResume(rawLines: string[], lang?: 'tr' | 'en'): ParseResult
   cv.order = [];
   const found = new Set<string>();
 
-  // bölümlere ayır
   const parts: { key: Key | 'header' | 'custom'; title: string; lines: string[] }[] = [{ key: 'header', title: '', lines: [] }];
   for (const l of lines) {
     const k = headingKey(l);
@@ -319,13 +286,11 @@ export function parseResume(rawLines: string[], lang?: 'tr' | 'en'): ParseResult
       /[A-ZÇĞİÖŞÜ]{3}/.test(l) &&
       !EMAIL.test(l)
     )
-      parts.push({ key: 'custom', title: l, lines: [] }); // tanınmayan BÜYÜK HARFLİ başlık
+      parts.push({ key: 'custom', title: l, lines: [] });
     else parts[parts.length - 1].lines.push(l);
   }
-  // başlık bulunamadıysa düz metin: hepsini üst bilgi + özet say
   const header = parts[0].lines;
 
-  /* ---------- üst bilgi ---------- */
   const all = [header, ...parts.filter((p) => p.key === 'contact' || p.key === 'personal').map((p) => p.lines)].flat().join('\n');
   const email = EMAIL.exec(all)?.[0] ?? EMAIL.exec(textAll)?.[0] ?? '';
   if (email) {
@@ -345,7 +310,6 @@ export function parseResume(rawLines: string[], lang?: 'tr' | 'en'): ParseResult
     cv.links.push({ id: uid(), type, value: u.replace(/^https?:\/\/(www\.)?/i, ''), label: '' });
   }
   if (cv.links.length) found.add('bağlantılar');
-  // ad ve unvan: iletişim olmayan ilk iki kısa satır
   const plainHead = header
     .flatMap((l) => l.split('\t'))
     .map((l) => l.trim())
@@ -369,10 +333,8 @@ export function parseResume(rawLines: string[], lang?: 'tr' | 'en'): ParseResult
     const at = city.index + city[0].indexOf(city[1]);
     cv.personal.location = headJoined.slice(at, at + city[1].length).replace(/^[,·|\s]+/, '').trim();
   }
-  // üst bilgideki uzun paragraf → özet
   const headPara = header.filter((l) => l.length > 120 || (l.split(/\s+/).length > 14 && /[.]$/.test(l)));
 
-  /* ---------- bölümler ---------- */
   const sectionsFound: string[] = [];
   const pushOrder = (k: string) => {
     if (!cv.order.includes(k as never)) cv.order.push(k as never);
@@ -476,14 +438,12 @@ export function parseResume(rawLines: string[], lang?: 'tr' | 'en'): ParseResult
       }
     }
   }
-  // kişisel bilgiler bazen başlıksız üstte yer alır
   parsePersonal(header.join(' · '), cv);
   if (!cv.summary && headPara.length) {
     cv.summary = headPara.join(' ');
     sectionsFound.unshift('özet');
   }
   if (cv.summary) pushOrder('summary');
-  // standart sırayı tamamla (boş bölümler görünmez)
   for (const k of emptyCV().order) pushOrder(k);
   cv.order.sort((a, b) => (a === 'summary' ? -1 : b === 'summary' ? 1 : 0));
 
@@ -492,7 +452,6 @@ export function parseResume(rawLines: string[], lang?: 'tr' | 'en'): ParseResult
   return { cv, found: parts3, confidence };
 }
 
-/** PDF'te satır sonlarında kırılan maddeleri ve paragrafları birleştirir */
 function joinWrapped(lines: string[]): string[] {
   const out: string[] = [];
   for (const raw of lines) {
@@ -520,7 +479,6 @@ function detect<T extends string>(t: string, list: [RegExp, T][]): T | '' {
   return list.find(([re]) => re.test(f))?.[1] ?? '';
 }
 
-/** Deneyim / eğitim / proje / özel bölüm girdileri */
 function parseEntries(lines: string[], kind: 'experience' | 'education' | 'projects' | 'volunteer' | 'custom'): Entry[] {
   type Raw = { head: string[]; range: DateRange | null; bullets: string[]; desc: string[]; meta: string[] };
   const raws: Raw[] = [];
@@ -548,11 +506,9 @@ function parseEntries(lines: string[], kind: 'experience' | 'education' | 'proje
     }
     const hasBody = !!c && (c.bullets.length > 0 || c.desc.length > 0);
     if (range) {
-      // tarih satırı: yeni girdi mi, mevcut girdinin tarihi mi?
       if (!c || hasBody || (c.range && rest)) c = start();
       if (!c.range) c.range = range;
       else c = Object.assign(start(), { range });
-      // tarih satırının geri kalanı: konum / çalışma tipi → meta, gerisi başlık
       for (const part of splitHead(rest)) {
         if (WORK_ONLY.test(fold(part)) || /^(not ortalamasi|gpa|ortalama|gano)\b/.test(fold(part)) || (isCity(part) && part.split(/\s+/).length <= 3)) c.meta.push(part);
         else c.head.push(part);
@@ -567,7 +523,6 @@ function parseEntries(lines: string[], kind: 'experience' | 'education' | 'proje
     } else c.desc.push(l);
   }
 
-  // ortak şirket altında roller: başlığı olup tarihi/gövdesi olmayan girdi + ardından tarihli roller
   const out: Entry[] = [];
   let parentCompany = '';
   let parentLoc = '';
@@ -576,7 +531,6 @@ function parseEntries(lines: string[], kind: 'experience' | 'education' | 'proje
     const r = raws[i];
     const next = raws[i + 1];
     if (kind === 'experience' && r.range && !r.bullets.length && !r.desc.length && next?.range && next.head.length === 1 && !has(COMPANY_HINT, next.head[0])) {
-      // "Şirket (tarih)" üst girdisi
       const segs = r.head.flatMap(splitHead);
       parentCompany = segs[0] ?? '';
       parentLoc = segs.find((s) => isCity(s)) ?? '';
@@ -619,7 +573,6 @@ function parseEntries(lines: string[], kind: 'experience' | 'education' | 'proje
       let position = rest[0] ?? '';
       let company = rest[1] ?? parentCompany;
       if (rest.length > 2) {
-        // "Stajyer – Sistem Destek – Mavi Yazılım": şirket ipucu taşıyan parça ya da sonuncusu şirkettir
         const ci = rest.findIndex((x) => has(COMPANY_HINT, x));
         const at = ci >= 0 ? ci : rest.length - 1;
         company = rest[at];
@@ -630,7 +583,6 @@ function parseEntries(lines: string[], kind: 'experience' | 'education' | 'proje
         if (swap) [position, company] = [b, a];
       }
       if (rest.length === 1) {
-        // tek parça: unvan mı şirket mi? Şirketse pozisyon yok; değilse önceki girdinin şirketinden devral (aynı şirkette rol değişikliği)
         if (has(COMPANY_HINT, rest[0]) && !has(TITLE_HINT, rest[0])) [position, company] = ['', rest[0]];
         else company = parentCompany || (kind === 'experience' && !r.range ? '' : lastCompany);
       }
@@ -671,9 +623,7 @@ function parseSkills(lines: string[]): Entry[] {
     const m = /^([^:\t]{2,32})\s*[:\t]\s*(.+)$/.exec(l);
     if (m && split(m[2]).length >= 1 && !/^https?$/i.test(m[1])) groups.push(newEntry({ name: m[1].trim(), level: '', items: split(m[2]) }));
     else {
-      // aynı bölümde "Grup  öğeler" düzeni varsa, sekmesi kaybolmuş satırın ilk kelimesi grup adıdır ("Araçlar PowerShell, …")
       const first = l.split(/\s*,\s*/)[0];
-      // etiket: büyük harfle başlayan kelime + küçük harfli devamı ("Müşteri hizmetleri"), öğeler büyük harfle başlar
       const w = /^(\p{Lu}[\p{L}/&-]*(?:\s+\p{Ll}[\p{L}/&-]*){0,2})\s+(\p{Lu}.*)$/u.exec(first);
       if (structured && w && l.includes(',')) groups.push(newEntry({ name: w[1], level: '', items: split(l.slice(w[1].length)) }));
       else loose.push(...split(l));
@@ -706,7 +656,6 @@ function parseSimple(lines: string[], key: 'certificates' | 'courses' | 'awards'
     const { date, rest } = range ? { date: range.start, rest: r1 } : takeSingle(l);
     const segs = splitHead(rest);
     if (!segs.length) continue;
-    // önceki girdinin açıklama satırı mı?
     if (out.length && /^[a-zçğıöşü]/.test(rest) && !date) {
       const prev = out[out.length - 1];
       prev.description = [prev.description, rest].filter(Boolean).join(' ');
@@ -757,7 +706,6 @@ function parsePersonal(text: string, cv: CV) {
   if (nat && !p.nationality) p.nationality = /t\.?c|turk/.test(nat[1]) ? (cv.lang === 'en' ? 'Turkish' : 'T.C.') : nat[1];
 }
 
-/* =============================== dosya girişi =============================== */
 export async function parseResumeFile(file: File): Promise<ParseResult & { kind: string }> {
   const name = file.name.toLowerCase();
   const data = new Uint8Array(await file.arrayBuffer());
@@ -765,7 +713,6 @@ export async function parseResumeFile(file: File): Promise<ParseResult & { kind:
     const { extractPdfText } = await import('../ats/pdfText');
     const pdf = await extractPdfText(data);
     if (pdf.text.replace(/\s/g, '').length < 40) throw new Error('Bu PDF’te seçilebilir metin yok (taranmış görüntü olabilir). Word ya da metin olarak kaydedip tekrar dene.');
-    // LinkedIn dışa aktarımı ise özel çözümleyiciyi kullan
     if (/^(contact|iletişim|iletisim)\b/im.test(pdf.text.slice(0, 200)) && /linkedin\.com\/in\//i.test(pdf.text)) {
       const { parseLinkedIn } = await import('./linkedin');
       const r = parseLinkedIn(pdf);

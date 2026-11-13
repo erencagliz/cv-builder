@@ -2,7 +2,7 @@ import { downloadBackup } from '../store/backup';
 import { useState } from 'react';
 import { CONTACT_EMAIL } from '../config';
 import { wipeAll } from '../store/db';
-import { useToast } from '../ui/app';
+import { useToast } from '../ui/toast';
 import { Icon } from '../ui/fields';
 
 export function PrivacyModal({ onClose }: { onClose: () => void }) {

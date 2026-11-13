@@ -14,12 +14,11 @@ export interface FieldDef {
 
 export interface SectionDef {
   key: BuiltinSectionKey;
-  label: string; // editörde görünen ad
-  title: Record<Lang, string>; // CV'deki standart başlık
+  label: string;
+  title: Record<Lang, string>;
   description: string;
   kind: 'entries' | 'text' | 'personal' | 'references';
   fields?: FieldDef[];
-  /** kart başlığında gösterilecek özet */
   summary?: (e: Record<string, unknown>) => string;
   addLabel?: string;
 }
@@ -349,7 +348,6 @@ export const SECTION_MAP = Object.fromEntries(SECTION_DEFS.map((d) => [d.key, d]
 
 export const ENTRY_SECTIONS = SECTION_DEFS.filter((d) => d.kind === 'entries').map((d) => d.key) as EntrySectionKey[];
 
-/** ATS'nin genelde tanıdığı başlıklar (küçük harf) */
 export const STANDARD_TITLES = new Set(
   [
     'profil', 'özet', 'hakkımda', 'kariyer hedefi', 'iş deneyimi', 'deneyim', 'iş tecrübesi', 'tecrübe', 'eğitim',

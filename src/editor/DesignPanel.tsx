@@ -31,7 +31,7 @@ export function DesignPanel({ cv }: { cv: CV }) {
   const d = cv.design;
   const set = <K extends keyof Design>(k: K, v: Design[K]) => update((x) => void (x.design[k] = v as never), `d.${String(k)}`);
   const setIn = <G extends 'colors' | 'sizes' | 'margins' | 'fonts'>(g: G, k: keyof Design[G], v: unknown) =>
-    update((x) => void ((x.design[g] as any)[k] = v), `d.${g}.${String(k)}`);
+    update((x) => void ((x.design[g] as unknown as Record<string, unknown>)[k as string] = v), `d.${g}.${String(k)}`);
 
   return (
     <div className="design-panel">

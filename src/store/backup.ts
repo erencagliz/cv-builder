@@ -1,17 +1,16 @@
+import { uiLang } from '../i18n';
 import { db, listCVs } from './db';
 import { normalizeCV, uid } from '../model/defaults';
 import type { CV } from '../model/types';
 
 export const BACKUP_FORMAT = 'cv-builder-backup';
 
-/** Tüm CV'leri (ve başvuru kayıtlarını) tek dosyada toplar */
 export async function buildBackup(): Promise<string> {
   const cvs = (await listCVs()).map((r) => r.data);
   let applications: unknown[] = [];
   try {
     applications = await db.table('applications').toArray();
   } catch {
-    /* tablo yoksa */
   }
   return JSON.stringify({ format: BACKUP_FORMAT, version: 1, exportedAt: new Date().toISOString(), cvs, applications });
 }
@@ -20,14 +19,13 @@ export async function downloadBackup() {
   const blob = new Blob([await buildBackup()], { type: 'application/json' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
-  a.download = `CV-Builder-yedek-${new Date().toISOString().slice(0, 10)}.json`;
+  a.download = `CV-Builder-${uiLang() === 'tr' ? 'yedek' : 'backup'}-${new Date().toISOString().slice(0, 10)}.json`;
   document.body.appendChild(a);
   a.click();
   a.remove();
   setTimeout(() => URL.revokeObjectURL(a.href), 4000);
 }
 
-/** Yedek dosyasını geri yükler. Var olan CV'lerin üzerine yazmaz: aynı kimlik varsa yeni kimlik verir. */
 export async function restoreBackup(data: { cvs?: unknown[]; applications?: unknown[] }): Promise<{ cvs: CV[]; applications: number }> {
   const existing = new Set((await db.cvs.toCollection().primaryKeys()) as string[]);
   const out: CV[] = [];
@@ -53,7 +51,6 @@ export async function restoreBackup(data: { cvs?: unknown[]; applications?: unkn
       apps++;
     }
   } catch {
-    /* başvuru tablosu yoksa atla */
   }
   return { cvs: out, applications: apps };
 }

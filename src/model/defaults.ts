@@ -97,7 +97,6 @@ export const newEntry = (fields: Record<string, unknown> = {}): Entry => ({ id: 
 
 const isObj = (v: unknown): v is Record<string, unknown> => !!v && typeof v === 'object' && !Array.isArray(v);
 
-/** Eksik alanları varsayılanlarla tamamlar (eski sürüm verisi ve içe aktarım için). */
 export function normalizeCV(input: unknown): CV {
   const base = emptyCV();
   if (!isObj(input)) return base;
@@ -132,7 +131,6 @@ export function normalizeCV(input: unknown): CV {
       photo: { ...base.design.photo, ...(isObj(src.design?.photo) ? src.design!.photo : {}) },
     },
   };
-  // Eski kayıtlar: yeni tasarım alanları yoksa sade değerlerle tamamla (varsayılan şablona çevirme)
   if (isObj(src.design)) {
     for (const [k, v] of Object.entries(BASE_DESIGN)) {
       if ((src.design as Record<string, unknown>)[k] === undefined) (cv.design as unknown as Record<string, unknown>)[k] = structuredClone(v);
@@ -148,7 +146,6 @@ function finish(cv: CV, src: Partial<CV>): CV {
       if (Array.isArray(arr)) cv.sections[k] = arr.map(withId);
     }
   }
-  // Sıralama: bilinmeyenleri at, eksikleri sona ekle
   const known = new Set<string>([...DEFAULT_ORDER, ...cv.custom.map((c) => `custom:${c.id}`)]);
   const order = (Array.isArray(src.order) ? src.order : []).filter((k) => known.has(k));
   for (const k of known) if (!order.includes(k as SectionKey)) order.push(k as SectionKey);

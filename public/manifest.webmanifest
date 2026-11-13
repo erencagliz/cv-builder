@@ -1,8 +1,8 @@
 {
-  "name": "CV Builder – ATS uyumlu CV",
+  "name": "CV Builder – ATS-friendly CV maker",
   "short_name": "CV Builder",
-  "description": "Ücretsiz, kayıtsız ve ATS uyumlu CV oluşturucu.",
-  "lang": "tr",
+  "description": "A free, private and ATS-friendly CV builder.",
+  "lang": "en",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

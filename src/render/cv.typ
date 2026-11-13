@@ -1,7 +1,3 @@
-// CV Builder – Typst şablonu
-// Tüm metinler /data.json'dan okunur; kullanıcı metni hiçbir zaman Typst kodu olarak yorumlanmaz.
-// ATS kuralları: tek akış, gerçek metin, heceleme ve bitişik harf (ligatür) kapalı, üst/alt bilgi yok.
-
 #let d = json("/data.json")
 #let D = d.design
 #let S = D.sizes
@@ -32,12 +28,10 @@
 #set block(spacing: D.paragraphGap * 1pt)
 #show link: it => if D.underlineLinks { underline(offset: 1.5pt, stroke: 0.4pt, it) } else { it }
 
-// Dekoratif ikon: görsel olarak çizilir, PDF'te "artifact" işaretlenir; ATS metnine karışmaz
 #let ic(svg, size: 1em) = if svg == "" or svg == none { none } else {
   pdf.artifact(box(baseline: 0.14em, image(bytes(svg), format: "svg", height: size, width: size)))
 }
 
-// **kalın** / *italik* parçaları
 #let rich(segs) = for s in segs {
   let b = s.at("b", default: false)
   let i = s.at("i", default: false)
@@ -47,7 +41,6 @@
 #let dot = meta[ · ]
 #let join-dot(..parts) = parts.pos().filter(p => p != "" and p != none).join(dot)
 
-/* ---------------- Başlık (ad, unvan, iletişim) ---------------- */
 #let header() = {
   let al = if D.nameAlign == "center" { center } else { left }
   let parts = ()
@@ -89,7 +82,6 @@
   } else { body }
 }
 
-/* ---------------- Bölüm başlıkları ---------------- */
 #show heading.where(level: 1): it => {
   let t = text(font: fam-head, size: S.heading * 1pt, weight: hweight, fill: hcolor, tracking: D.headingTracking * 1pt, it.body)
   let styled = if D.headingStyle == "rule" {
@@ -104,7 +96,6 @@
   block(above: D.sectionGap * 1pt, below: D.headingGap * 1pt, sticky: true, width: 100%, styled)
 }
 
-/* ---------------- Girdiler ---------------- */
 #let title-line(heading, org, date, size: S.entryTitle, loc: "") = {
   set text(size: size * 1pt)
   if heading != "" { strong(heading) }
@@ -141,7 +132,6 @@
 
 #let entry-body(it, first) = block(above: if first { 0pt } else if D.entryDivider { D.entryGap * 0.5pt } else { D.entryGap * 1pt }, below: 0pt, width: 100%, breakable: true, {
   if it.roles.len() > 0 {
-    // Aynı şirkette birden fazla pozisyon
     block(above: 0pt, below: 0pt, title-line(it.heading, "", it.date, loc: if inline-dates { it.location } else { "" }))
     if it.location != "" and not inline-dates { block(above: line-gap, below: 0pt, meta(it.location)) }
     for r in it.roles {
@@ -171,7 +161,6 @@
   entry-body(it, first)
 }
 
-/* ---------------- Belge ---------------- */
 #header()
 
 #if d.at("kind", default: "cv") == "letter" {

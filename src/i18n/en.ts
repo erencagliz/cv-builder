@@ -1,10 +1,4 @@
-/**
- * Türkçe arayüz metni → İngilizce. Anahtarlar arayüzde görünen metnin birebir aynısıdır.
- * {0}, {1}… değişken parçaları (sayı, ad) yakalar. Yeni bir arayüz metni eklenince buraya eklenmeli;
- * `node scripts/i18n-crawl.mjs` İngilizce arayüzde çevrilmeden kalanları listeler.
- */
 export const EN: Record<string, string> = {
-  /* ============ yalnızca öznitelik (yer tutucu) ============ */
   '@Bilgi İşlem Uzmanı': 'IT Specialist',
   '@Ataşehir, İstanbul': 'Manchester, UK',
   '@İstanbul': 'London',
@@ -15,11 +9,9 @@ export const EN: Record<string, string> = {
   '@Eski yöneticim': 'My former manager',
   '@Uzman': 'Specialist',
 
-  /* ============ sekme başlığı ============ */
   'CV Builder · Ücretsiz, ATS uyumlu CV oluştur': 'CV Builder · Free, ATS-friendly CV maker',
   '{0} – CV Builder': '{0} – CV Builder',
 
-  /* ============ genel ============ */
   'Kapat': 'Close',
   'Tamam': 'Done',
   'Sil': 'Delete',
@@ -72,7 +64,6 @@ export const EN: Record<string, string> = {
   'Aydınlık tema': 'Light theme',
   'Karanlık tema': 'Dark theme',
 
-  /* ============ üst çubuk ve menü ============ */
   'CV’lerim': 'My CVs',
   'CV’lerim, yeni CV, örnekler': 'My CVs, new CV, samples',
   'Başvurular': 'Applications',
@@ -154,7 +145,6 @@ export const EN: Record<string, string> = {
     'CVs are stored only in this browser. If you made it on another device, export it there as JSON and import it here.',
   'Son CV’ni aç': 'Open your latest CV',
 
-  /* ============ önizleme ============ */
   'Dizgi motoru yükleniyor… %{0}': 'Loading the typesetting engine… {0}%',
   'Dizgi motoru yükleniyor…': 'Loading the typesetting engine…',
   'Dizgi motoru indiriliyor': 'Downloading the typesetting engine',
@@ -175,7 +165,6 @@ export const EN: Record<string, string> = {
   'Ekrana sığdır': 'Fit to screen',
   'Yakınlaştır': 'Zoom in',
 
-  /* ============ sihirbaz ============ */
   'Adımlar': 'Steps',
   'Adın, iletişim bilgilerin, bağlantıların ve kısa bir özet. Fotoğraf eklemek istersen burada.': 'Your name, contact details, links and a short summary. Add a photo here if you like.',
   'Çalıştığın yerler, en yeniden eskiye. Her işin altına yaptığın 2-4 somut şeyi madde olarak yaz.': 'Where you worked, newest first. Under each job, list 2-4 concrete things you did.',
@@ -193,7 +182,6 @@ export const EN: Record<string, string> = {
   'Deneyim': 'Experience',
   'Eğitim': 'Education',
 
-  /* ============ içerik paneli ============ */
   'Bölümler': 'Sections',
   'Sürükleyerek sırala · göz simgesiyle gizle': 'Drag to reorder · hide with the eye icon',
   'Yeni bölüm': 'New section',
@@ -335,7 +323,6 @@ export const EN: Record<string, string> = {
   'Pozisyon girilmedi': 'No position',
   'Şirket girilmedi': 'No company',
 
-  /* ============ bölüm ve alan adları ============ */
   'Açıklama': 'Description',
   'Başarılar / maddeler': 'Achievements / bullets',
   'Her madde bir fiille başlasın ve mümkünse sayı içersin: "Ağdaki kesinti süresini %40 azalttım."': 'Start each bullet with a verb and include a number if possible: "Cut network downtime by 40%."',
@@ -475,7 +462,6 @@ export const EN: Record<string, string> = {
   'Proje': 'Project',
   'Yayın': 'Publication',
 
-  /* ============ tasarım ============ */
   'Şablon': 'Template',
   'Şablon seçmek yazı tipi, boyut ve aralıkları o şablonun ayarlarına getirir; renklerin korunur. Hepsi tek sütunlu ve ATS uyumludur.': 'Choosing a template applies its fonts, sizes and spacing; your colors are kept. All are single-column and ATS-friendly.',
   'İmza': 'Signature',
@@ -596,7 +582,6 @@ export const EN: Record<string, string> = {
   'Sol': 'Left',
   '10 mm’den dar kenar boşlukları bazı yazıcılarda kesilebilir.': 'Margins below 10 mm may be cut off by some printers.',
 
-  /* ============ ikon adları ============ */
   'Başlık ikonunu değiştir': 'Change heading icon',
   'Başlık ikonu ekle': 'Add heading icon',
   'İkon ara (ör. kitap, kod)': 'Search icons (e.g. book, code)',
@@ -669,7 +654,6 @@ export const EN: Record<string, string> = {
   'Not A': 'Grade A',
   'Notlar': 'Notes',
 
-  /* ============ CV yöneticisi ============ */
   'Kayıtlı': 'Saved',
   'Yeni CV': 'New CV',
   'Örnekler': 'Samples',
@@ -741,7 +725,6 @@ export const EN: Record<string, string> = {
   'İdari İşler / Asistan': 'Administration / Assistant',
   'Mühendislik (Üretim)': 'Engineering (Manufacturing)',
 
-  /* ============ başvurular ============ */
   'Başvuruldu': 'Applied',
   'Görüşme': 'Interview',
   'Teklif': 'Offer',
@@ -765,7 +748,6 @@ export const EN: Record<string, string> = {
   'Başvurularına eklendi.': 'Added to your applications.',
   'Başvurdum, kaydet': 'I applied, save it',
 
-  /* ============ paylaşım ============ */
   'Paylaş ve taşı': 'Share and move',
   'CV’n bağlantının kendisine sıkıştırılarak yazılır; hiçbir sunucuya yüklenmez. Bağlantıyı açan kişi CV’ni görür, PDF indirebilir ya da kendi tarayıcısına kopyalayabilir. Aynı yolla CV’ni telefonuna veya başka bir bilgisayara taşıyabilirsin.':
     'Your CV is compressed into the link itself; it is never uploaded to a server. Whoever opens the link sees your CV and can download the PDF or copy it to their browser. You can use the same link to move your CV to your phone or another computer.',
@@ -792,7 +774,6 @@ export const EN: Record<string, string> = {
   'CV açılamadı': 'Could not open the CV',
   'Kendi CV’ni hazırla': 'Make your own CV',
 
-  /* ============ gizlilik ============ */
   'Gizlilik ve verilerin': 'Privacy and your data',
   'Kısaca: CV’ne yazdığın bilgiler cihazından çıkmaz. Hesap, veritabanı veya çerez yok.': 'In short: what you write in your CV never leaves your device. No account, no database, no cookies.',
   'Hangi veriler, nerede tutuluyor?': 'What data is stored, and where?',
@@ -817,7 +798,6 @@ export const EN: Record<string, string> = {
   'Tüm verilerimi sil': 'Delete all my data',
   'Bu metin bilgilendirme amaçlıdır; siteyi yayınlayan kişi veya kurum kendi durumuna göre bir hukukçuya gözden geçirtmelidir.': 'This text is for information only; whoever publishes the site should have it reviewed by a lawyer.',
 
-  /* ============ kurtarma ============ */
   'Bir şeyler ters gitti': 'Something went wrong',
   'Endişelenme: CV’lerin bu tarayıcıda kayıtlı ve bu hatadan etkilenmedi. Sayfayı yenilemek çoğu zaman sorunu çözer. İstersen önce tüm CV’lerinin yedeğini indir.':
     'Don’t worry: your CVs are saved in this browser and were not affected. Reloading usually fixes it. You can download a backup of all your CVs first.',
@@ -827,7 +807,6 @@ export const EN: Record<string, string> = {
   'Başa dön': 'Start over',
   'Teknik ayrıntı': 'Technical details',
 
-  /* ============ ön yazı ============ */
   'Başvuruna kısa bir mektup ekle': 'Add a short letter to your application',
   'CV’nle aynı tasarımı kullanır. Bir başlangıç metni seç, köşeli parantezli yerleri kendi bilgilerinle doldur. 3-4 kısa paragraf yeterli.': 'Uses the same design as your CV. Pick a starter text and fill in the bracketed parts. 3-4 short paragraphs are enough.',
   'Alıcı': 'Recipient',
@@ -854,7 +833,6 @@ export const EN: Record<string, string> = {
   'Eğitim, staj ve projelerle deneyim eksikliğini telafi eder.': 'Makes up for limited experience with education, internships and projects.',
   'Farklı bir alandan gelen aktarılabilir becerileri anlatır.': 'Explains transferable skills from a different field.',
 
-  /* ============ ATS analizi: ekran ============ */
   'ATS okunabilirliği': 'ATS readability',
   'PDF’in metni bir ATS’nin yaptığı gibi geri okunur.': 'The PDF’s text is read back the way an ATS does.',
   'Etki ve içerik': 'Impact and content',
@@ -917,7 +895,6 @@ export const EN: Record<string, string> = {
   'Sonuç yok': 'No result',
   '{0} · {1}. madde': '{0} · bullet {1}',
 
-  /* ============ ATS analizi: madde ipuçları ============ */
   'Pasif kalıp (“sorumluydum, görev aldım”). Ne yaptığını güçlü bir fiille anlat: yönettim, kurdum, azalttım.': 'Passive phrase (“was responsible for”). Describe what you did with a strong verb: led, built, reduced.',
   'Edilgen anlatım (“yapıldı, sağlandı”). Etken yaz: “yaptım, sağladım”.': 'Passive voice (“was done”). Write it actively.',
   'Cümle bir eylemle bitmiyor. Sonuna ne yaptığını söyleyen fiili koy (…kurdum, …azalttım).': 'No clear action. Use a verb that says what you did (built…, reduced…).',
@@ -931,7 +908,6 @@ export const EN: Record<string, string> = {
   '“Ben” demene gerek yok.': 'No need to say “I”.',
   'Klişe ifade; yerine kanıt koy.': 'Cliché; replace it with evidence.',
 
-  /* ============ ATS analizi: bulgular ============ */
   'PDF’ten neredeyse hiç metin okunamadı': 'Almost no text could be read from the PDF',
   'ATS bu dosyayı boş görür.': 'An ATS would see this file as empty.',
   'PDF’te okunamayan karakter var': 'The PDF contains unreadable characters',
@@ -1109,7 +1085,6 @@ export const EN: Record<string, string> = {
   'İngilizce CV’de fotoğraf veya doğum tarihi var': 'English CV includes a photo or date of birth',
   'ABD, İngiltere gibi ülkelerde bunlar istenmez; üstteki “Uluslararası” düğmesi gizler.': 'These are not expected in countries like the US and UK; the “International” button at the top hides them.',
 
-  /* ============ ilan eşleştirme ============ */
   'Başvurduğun ilanın metnini yapıştır': 'Paste the text of the job ad',
   'İlan başlığı, aranan nitelikler, iş tanımı…': 'Job title, requirements, description…',
   'İlan metni yalnızca bu tarayıcıda, bu CV ile birlikte saklanır.': 'The job ad is stored only in this browser, with this CV.',
@@ -1134,7 +1109,6 @@ export const EN: Record<string, string> = {
   'İlan askerlik durumunu soruyor; CV’nde belirtilmiş.': 'The ad asks about military service; it is stated in your CV.',
   'İlan askerlik durumunu soruyor ama CV’nde yok.': 'The ad asks about military service but your CV doesn’t say.',
 
-  /* ============ roller ============ */
   'Bilgi işlem / IT destek': 'IT support',
   'Sistem / ağ yöneticisi': 'System / network administrator',
   'Siber güvenlik': 'Cyber security',
@@ -1158,7 +1132,6 @@ export const EN: Record<string, string> = {
   'Öğretmen / eğitimci': 'Teacher / educator',
   'İdari işler / asistan': 'Administration / assistant',
 
-  /* ============ aylar ============ */
   'Ocak': 'January',
   'Şubat': 'February',
   'Mart': 'March',

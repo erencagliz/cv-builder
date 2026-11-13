@@ -6,7 +6,6 @@ const DATA = icons as { generic: Record<string, string>; brands: Record<string, 
 export const GENERIC_ICONS = Object.keys(DATA.generic);
 export const iconLabel = (id: string) => DATA.labels[id] ?? id;
 
-/** Bölümlerin varsayılan ikonları */
 export const DEFAULT_SECTION_ICONS: Record<string, string> = {
   summary: 'user-round',
   experience: 'briefcase',
@@ -28,7 +27,6 @@ export const DEFAULT_SECTION_ICONS: Record<string, string> = {
 export const sectionIconId = (icons: Partial<Record<SectionKey, string>>, key: SectionKey): string =>
   icons[key] ?? (key.startsWith('custom:') ? 'star' : DEFAULT_SECTION_ICONS[key] ?? 'star');
 
-/** İletişim satırı ikonu: marka logosu varsa o, yoksa genel ikon */
 export function contactIconId(kind: string): string {
   if (DATA.brands[kind]) return `brand:${kind}`;
   switch (kind) {
@@ -46,7 +44,6 @@ export function contactIconId(kind: string): string {
   }
 }
 
-/** Typst'e ve önizlemeye giden, rengi uygulanmış bağımsız SVG */
 export function iconSvg(id: string, color: string): string {
   if (!id || id === 'none') return '';
   if (id.startsWith('brand:')) {

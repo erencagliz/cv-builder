@@ -1,4 +1,4 @@
-import type { CV, Entry } from './types';
+import type { CV, DateRange, Entry } from './types';
 import { emptyCV, newEntry, normalizeCV, uid } from './defaults';
 import { LINK_TYPES, resolveLink } from './links';
 
@@ -14,12 +14,15 @@ const ym = (v: unknown) => {
   const m = /^(\d{4})(?:-(\d{2}))?/.exec(s(v));
   return m ? (m[2] ? `${m[1]}-${m[2]}` : m[1]) : '';
 };
+type Obj = Record<string, unknown>;
+const obj = (v: unknown): Obj => (v && typeof v === 'object' && !Array.isArray(v) ? (v as Obj) : {});
+const list = (v: unknown): Obj[] => (Array.isArray(v) ? v.map(obj) : []);
+const strs = (v: unknown): string[] => (Array.isArray(v) ? v.map(s) : []);
 const range = (start: unknown, end: unknown) => ({ start: ym(start), end: ym(end), current: !!s(start) && !s(end) });
 
-/** JSON Resume (jsonresume.org) → CV */
-export function fromJsonResume(j: Record<string, any>): CV {
+export function fromJsonResume(j: Obj): CV {
   const cv = emptyCV('İçe aktarılan CV');
-  const b = j.basics ?? {};
+  const b = obj(j.basics);
   const [firstName, ...rest] = s(b.name).split(' ');
   cv.personal = {
     ...cv.personal,
@@ -28,51 +31,50 @@ export function fromJsonResume(j: Record<string, any>): CV {
     title: s(b.label),
     email: s(b.email),
     phone: s(b.phone),
-    location: [s(b.location?.city), s(b.location?.region)].filter(Boolean).join(', '),
+    location: [s(obj(b.location).city), s(obj(b.location).region)].filter(Boolean).join(', '),
   };
   cv.summary = s(b.summary);
   if (s(b.url)) cv.links.push({ id: uid(), type: 'website', value: s(b.url), label: '' });
-  for (const p of b.profiles ?? []) {
+  for (const p of list(b.profiles)) {
     const net = s(p.network).toLowerCase().replace(/\s/g, '');
     const t = LINK_TYPES.find((x) => x.id === net || x.name.toLowerCase().replace(/\s/g, '') === net);
     cv.links.push({ id: uid(), type: t?.id ?? 'custom', value: s(p.url) || s(p.username), label: t ? '' : s(p.network) });
   }
-  cv.sections.experience = (j.work ?? []).map((w: any) =>
+  cv.sections.experience = list(j.work).map((w) =>
     newEntry({
       position: s(w.position),
       company: s(w.name || w.company),
       location: s(w.location),
       dates: range(w.startDate, w.endDate),
       description: s(w.summary),
-      bullets: (w.highlights ?? []).map(s),
+      bullets: strs(w.highlights),
       tags: [],
     }),
   );
-  cv.sections.volunteer = (j.volunteer ?? []).map((w: any) =>
-    newEntry({ role: s(w.position), organization: s(w.organization), dates: range(w.startDate, w.endDate), description: s(w.summary), bullets: (w.highlights ?? []).map(s) }),
+  cv.sections.volunteer = list(j.volunteer).map((w) =>
+    newEntry({ role: s(w.position), organization: s(w.organization), dates: range(w.startDate, w.endDate), description: s(w.summary), bullets: strs(w.highlights) }),
   );
-  cv.sections.education = (j.education ?? []).map((e: any) =>
-    newEntry({ school: s(e.institution), field: s(e.area), degree: '', gpa: s(e.score), gpaScale: '4', dates: range(e.startDate, e.endDate), tags: (e.courses ?? []).map(s) }),
+  cv.sections.education = list(j.education).map((e) =>
+    newEntry({ school: s(e.institution), field: s(e.area), degree: '', gpa: s(e.score), gpaScale: '4', dates: range(e.startDate, e.endDate), tags: strs(e.courses) }),
   );
-  cv.sections.awards = (j.awards ?? []).map((a: any) => newEntry({ title: s(a.title), issuer: s(a.awarder), date: ym(a.date), description: s(a.summary) }));
-  cv.sections.certificates = (j.certificates ?? []).map((c: any) => newEntry({ name: s(c.name), issuer: s(c.issuer), date: ym(c.date), url: s(c.url) }));
-  cv.sections.publications = (j.publications ?? []).map((p: any) =>
+  cv.sections.awards = list(j.awards).map((a) => newEntry({ title: s(a.title), issuer: s(a.awarder), date: ym(a.date), description: s(a.summary) }));
+  cv.sections.certificates = list(j.certificates).map((c) => newEntry({ name: s(c.name), issuer: s(c.issuer), date: ym(c.date), url: s(c.url) }));
+  cv.sections.publications = list(j.publications).map((p) =>
     newEntry({ title: s(p.name), publisher: s(p.publisher), date: ym(p.releaseDate), url: s(p.url), description: s(p.summary) }),
   );
-  cv.sections.skills = (j.skills ?? []).map((k: any) => newEntry({ name: s(k.name), level: '', items: (k.keywords ?? []).map(s) }));
-  cv.sections.languages = (j.languages ?? []).map((l: any) => newEntry({ language: s(l.language), level: '', exam: '', score: s(l.fluency) }));
-  cv.sections.projects = (j.projects ?? []).map((p: any) =>
-    newEntry({ name: s(p.name), role: (p.roles ?? []).map(s).join(', '), url: s(p.url), dates: range(p.startDate, p.endDate), description: s(p.description), bullets: (p.highlights ?? []).map(s), tags: (p.keywords ?? []).map(s) }),
+  cv.sections.skills = list(j.skills).map((k) => newEntry({ name: s(k.name), level: '', items: strs(k.keywords) }));
+  cv.sections.languages = list(j.languages).map((l) => newEntry({ language: s(l.language), level: '', exam: '', score: s(l.fluency) }));
+  cv.sections.projects = list(j.projects).map((p) =>
+    newEntry({ name: s(p.name), role: strs(p.roles).join(', '), url: s(p.url), dates: range(p.startDate, p.endDate), description: s(p.description), bullets: strs(p.highlights), tags: strs(p.keywords) }),
   );
-  cv.hobbies = (j.interests ?? []).map((i: any) => s(i.name)).filter(Boolean).join(', ');
-  cv.references.items = (j.references ?? []).map((r: any) => newEntry({ name: s(r.name), relation: s(r.reference) }));
+  cv.hobbies = list(j.interests).map((i) => s(i.name)).filter(Boolean).join(', ');
+  cv.references.items = list(j.references).map((r) => newEntry({ name: s(r.name), relation: s(r.reference) }));
   return cv;
 }
 
-/** CV → JSON Resume */
 export function toJsonResume(cv: CV): object {
   const p = cv.personal;
-  const date = (r: any) => r ?? {};
+  const date = (r: unknown) => obj(r) as Partial<DateRange>;
   const work = cv.sections.experience.map((e: Entry) => ({
     name: s(e.company),
     position: s(e.position),
@@ -115,18 +117,17 @@ export function toJsonResume(cv: CV): object {
   };
 }
 
-/** Dosya içeriğini tanıyıp CV'ye çevirir. Hata durumunda anlaşılır mesaj fırlatır. */
 export function importAny(text: string): CV {
-  let data: any;
+  let data: Obj;
   try {
-    data = JSON.parse(text);
+    data = obj(JSON.parse(text));
   } catch {
     throw new Error('Dosya okunamadı. Geçerli bir JSON dosyası seçtiğinden emin ol.');
   }
   let cv: CV;
-  if (data?.format === FILE_FORMAT && data.cv) cv = normalizeCV(data.cv);
-  else if (data?.basics || data?.work) cv = fromJsonResume(data);
-  else if (data?.personal && data?.sections) cv = normalizeCV(data);
+  if (data.format === FILE_FORMAT && data.cv) cv = normalizeCV(data.cv);
+  else if (data.basics || data.work) cv = fromJsonResume(data);
+  else if (data.personal && data.sections) cv = normalizeCV(data);
   else throw new Error('Bu dosya tanınmadı. CV Builder veya JSON Resume formatında bir dosya seç.');
   cv.id = uid();
   cv.createdAt = cv.updatedAt = Date.now();

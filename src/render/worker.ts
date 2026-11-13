@@ -8,7 +8,6 @@ declare const __COMPILER_WASM_SIZE__: number;
 const base = new URL(import.meta.env.BASE_URL, self.location.origin).href;
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
-/** Ağ hatasında 3 kez dener; ikinci denemeden sonra tarayıcı önbelleğini atlar (bozuk önbellek kaydı için). */
 async function fetchBytes(url: string, progress = false): Promise<Uint8Array> {
   let last: unknown;
   for (let attempt = 0; attempt < 4; attempt++) {
@@ -16,7 +15,6 @@ async function fetchBytes(url: string, progress = false): Promise<Uint8Array> {
       const r = await fetch(url, attempt >= 2 ? { cache: 'reload' } : undefined);
       if (!r.ok) throw new Error(`${url} yüklenemedi (${r.status})`);
       if (!progress || !r.body) return new Uint8Array(await r.arrayBuffer());
-      // sıkıştırılmış yanıtta Content-Length sıkıştırılmış boyuttur; gerçek boyutu derleme anında biliyoruz
       const len = Number(r.headers.get('content-length')) || 0;
       const total = r.headers.get('content-encoding') || !len ? __COMPILER_WASM_SIZE__ : len;
       const reader = r.body.getReader();

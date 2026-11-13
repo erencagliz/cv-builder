@@ -1,16 +1,11 @@
-/**
- * Sunucusuz paylaşım bağlantısı: CV, sıkıştırılıp adresin # kısmına yazılır.
- * # sonrası tarayıcıdan sunucuya hiç gönderilmez; yani CV hiçbir sunucuda saklanmaz ya da görülmez.
- * Boyutu küçültmek için varsayılan değerlerle aynı olan alanlar ve kimlikler atılır, açarken geri eklenir.
- */
 import type { CV } from '../model/types';
 import { emptyCV, normalizeCV } from '../model/defaults';
+import { buildPath, type Lang } from '../routes';
 
 const VERSION = '1';
 type J = unknown;
 const isObj = (v: J): v is Record<string, J> => !!v && typeof v === 'object' && !Array.isArray(v);
 
-/** b'de a ile aynı olan her şeyi at */
 function diff(a: J, b: J): J | undefined {
   if (JSON.stringify(a) === JSON.stringify(b)) return undefined;
   if (isObj(a) && isObj(b)) {
@@ -96,4 +91,4 @@ export async function decodeCV(hash: string): Promise<CV> {
   return cv;
 }
 
-export const shareUrl = (code: string) => `${location.origin}/goruntule#${code}`;
+export const shareUrl = (code: string, lang: Lang) => `${location.origin}${buildPath({ name: 'view', lang })}#${code}`;

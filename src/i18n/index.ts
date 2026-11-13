@@ -1,29 +1,28 @@
-/**
- * Arayüz dili (CV dilinden bağımsız).
- *
- * Arayüz metinleri Türkçe yazılır; İngilizce seçiliyse sayfadaki metin düğümleri ve
- * title / placeholder / aria-label öznitelikleri sözlükten anında çevrilir. Böylece yeni eklenen
- * her metin otomatik çeviri kapsamına girer, kodda ayrı anahtar tutmak gerekmez.
- * CV önizlemesi, kullanıcının yazdığı alanlar ve ATS metni gibi içerik bölgeleri çevrilmez.
- * Sözlükte "{0}" gibi yer tutucular sayı ve isim gibi değişken parçaları yakalar.
- */
 import { EN } from './en';
+import { DEFAULT_LANG, canonicalPath, parsePath, type Lang } from '../routes';
 
-export type UiLang = 'tr' | 'en';
+export type UiLang = Lang;
 const KEY = 'ui-lang';
 
-function initial(): UiLang {
-  try {
-    const saved = localStorage.getItem(KEY);
-    if (saved === 'tr' || saved === 'en') return saved;
-  } catch {
-    /* depolama yoksa tarayıcı diline bak */
-  }
-  const langs = navigator.languages?.length ? navigator.languages : [navigator.language];
-  return langs.some((l) => /^tr\b/i.test(l)) || !langs.length ? 'tr' : 'en';
+export function detectLang(pathname: string, saved: string | null, browser: readonly string[]): UiLang {
+  const fromUrl = parsePath(pathname).lang;
+  if (fromUrl) return fromUrl;
+  if (saved === 'tr' || saved === 'en') return saved;
+  return browser.some((l) => /^tr\b/i.test(l)) ? 'tr' : DEFAULT_LANG;
 }
 
-let lang: UiLang = typeof window === 'undefined' ? 'tr' : initial();
+function initial(): UiLang {
+  let saved: string | null = null;
+  try {
+    saved = localStorage.getItem(KEY);
+  } catch {
+    saved = null;
+  }
+  const browser = navigator.languages?.length ? navigator.languages : [navigator.language ?? ''];
+  return detectLang(location.pathname, saved, browser);
+}
+
+const lang: UiLang = typeof window === 'undefined' ? DEFAULT_LANG : initial();
 export const uiLang = () => lang;
 export const uiLocale = () => (lang === 'en' ? 'en-GB' : 'tr-TR');
 
@@ -31,13 +30,10 @@ export function setUiLang(next: UiLang) {
   try {
     localStorage.setItem(KEY, next);
   } catch {
-    /* yoksay */
   }
-  // en sağlam yol: sayfayı yeniden yükle (React ağacı ve çeviri katmanı temiz başlar)
-  location.reload();
+  location.assign(canonicalPath(location.pathname, next) + location.hash);
 }
 
-/* ---------------- sözlük ---------------- */
 const exact = new Map<string, string>();
 const patterns: { re: RegExp; out: string }[] = [];
 for (const [k, v] of Object.entries(EN)) {
@@ -46,11 +42,9 @@ for (const [k, v] of Object.entries(EN)) {
     patterns.push({ re, out: v });
   } else exact.set(k, v);
 }
-// en belirgin (sabit metni en uzun) kalıp önce denensin
 patterns.sort((a, b) => b.re.source.replace(/\(\.\+\)/g, '').length - a.re.source.replace(/\(\.\+\)/g, '').length);
 const cache = new Map<string, string | null>();
 
-/** Tek bir metni çevirir; bulunamazsa null */
 function lookup(s: string, depth = 0): string | null {
   if (!depth && cache.has(s)) return cache.get(s)!;
   let r: string | null = exact.get(s) ?? null;
@@ -67,7 +61,6 @@ function lookup(s: string, depth = 0): string | null {
       }
     }
   }
-  // İngilizcede yüzde işareti sona gelir: %57 → 57%
   if (r !== null) r = r.replace(/%(\d+)/g, '$1%');
   if (!depth) {
     if (cache.size > 5000) cache.clear();
@@ -76,7 +69,6 @@ function lookup(s: string, depth = 0): string | null {
   return r;
 }
 
-/** Baştaki/sondaki boşlukları koruyarak çevirir */
 export function translate(s: string): string {
   if (lang === 'tr' || !s) return s;
   const m = /^(\s*)([\s\S]*?)(\s*)$/.exec(s)!;
@@ -86,13 +78,11 @@ export function translate(s: string): string {
   return r === null ? s : m[1] + r + m[3];
 }
 
-/** Kodda doğrudan kullanmak için: t('{0} sayfa', 3) */
 export function t(s: string, ...args: (string | number)[]): string {
   const filled = args.length ? s.replace(/\{(\d+)\}/g, (_x, i) => String(args[+i] ?? '')) : s;
   return translate(filled);
 }
 
-/* ---------------- DOM çeviri katmanı ---------------- */
 const SKIP_SEL = '.page, .ats-text, .bl-text, .it-text, .g-svg, .qr, [data-no-i18n], [contenteditable="true"], script, style, noscript';
 const ATTRS = ['title', 'placeholder', 'aria-label', 'alt'];
 
@@ -124,7 +114,6 @@ function translateAttrs(el: Element) {
   for (const a of ATTRS) {
     const v = el.getAttribute(a);
     if (v) {
-      // "@…" anahtarları yalnızca özniteliklerde (yer tutucu gibi) çevrilir
       const at = lang === 'en' ? (exact.get('@' + v.trim()) ?? null) : null;
       const tr = at ?? translate(v);
       if (tr !== v) el.setAttribute(a, tr);
@@ -146,7 +135,6 @@ export function startDomTranslation(root: HTMLElement = document.body) {
       } else m.addedNodes.forEach(translateNode);
     }
   }).observe(root, { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: ATTRS });
-  // sekme başlığı
   const fixTitle = () => {
     const tr = translate(document.title);
     if (tr !== document.title) document.title = tr;
@@ -157,7 +145,6 @@ export function startDomTranslation(root: HTMLElement = document.body) {
 }
 
 const EN_VALUES = new Set(Object.values(EN));
-/** Test ve sözlük bakımı için: çevrilemeyen Türkçe metinleri toplar */
 export function missingStrings(root: HTMLElement = document.body): string[] {
   const out = new Set<string>();
   const tr = /[çğıöşüÇĞİÖŞÜ]|\b(ve|bir|ile|için|yok|var|veya|gibi|ekle|seç|göster)\b/;

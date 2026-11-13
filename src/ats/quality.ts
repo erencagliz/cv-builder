@@ -6,7 +6,6 @@ export interface Check {
   level: Level;
   title: string;
   detail?: string;
-  /** düzeltmek için gidilecek bölüm */
   target?: string;
 }
 
@@ -19,8 +18,6 @@ const nowYm = () => {
   return d.getFullYear() * 12 + d.getMonth();
 };
 
-
-/** Toplam iş deneyimi (ay), çakışan dönemler bir kez sayılır */
 export function totalExperienceMonths(cv: CV): number {
   const spans = cv.sections.experience
     .map((e) => e.dates as DateRange | undefined)

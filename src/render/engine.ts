@@ -9,7 +9,7 @@ type Bytes = Uint8Array;
 export interface EngineDeps {
   compilerWasm: () => Promise<ArrayBuffer | Bytes> | ArrayBuffer | Bytes;
   rendererWasm: () => Promise<ArrayBuffer | Bytes> | ArrayBuffer | Bytes;
-  loadFile: (path: string) => Promise<Bytes>; // fonts/<id>/<style>.ttf
+  loadFile: (path: string) => Promise<Bytes>;
 }
 
 export interface SvgResult {
@@ -24,7 +24,7 @@ export class TypstEngine {
   private compiler?: TypstCompiler;
   private renderer?: TypstRenderer;
   private ready?: Promise<void>;
-  private fontBytes = new Map<string, Bytes[]>(); // font id -> dosyalar
+  private fontBytes = new Map<string, Bytes[]>();
   private activeFonts = '';
   private compilerModule?: ArrayBuffer | Bytes;
 
@@ -41,7 +41,6 @@ export class TypstEngine {
       c.addSource('/main.typ', template);
       this.compiler = c;
     })().catch((e) => {
-      // başarısız denemeyi önbellekte tutma: bir sonraki çağrı yeniden dener
       this.ready = undefined;
       throw e;
     });
@@ -85,7 +84,6 @@ export class TypstEngine {
       try {
         c.unmapShadow('/photo.jpg');
       } catch {
-        /* yoksa sorun değil */
       }
       if (model.header.photo) model.header.photo = false;
     }
@@ -98,7 +96,6 @@ export class TypstEngine {
     return { pdf: r.result, diagnostics: (r.diagnostics as string[] | undefined) ?? [] };
   }
 
-  /** Yalnızca sayfa sayısı (tek sayfaya sığdırma için) */
   async pages(model: RenderModel, photo: Bytes | null): Promise<number> {
     const c = await this.prepare(model, photo);
     const r = await c.compile({ mainFilePath: '/main.typ', format: 0, diagnostics: 'unix' });

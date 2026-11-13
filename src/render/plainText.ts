@@ -2,7 +2,6 @@ import type { RenderModel, Rich } from './buildModel';
 
 const r = (x: Rich) => x.map((s) => s.t).join('');
 
-/** Kariyer sitelerindeki "CV'ni yapıştır" kutuları için düz metin */
 export function toPlainText(m: RenderModel): string {
   const out: string[] = [];
   if (m.header.name) out.push(m.header.name);

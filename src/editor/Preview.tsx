@@ -10,7 +10,6 @@ interface Page {
   height: number;
 }
 
-/** Typst tüm sayfaları tek SVG'de alt alta çizer; her sayfayı ayrı viewBox ile gösteriyoruz. */
 function splitPages(svg: string, pages: { width: number; height: number }[]): Page[] {
   let y = 0;
   return pages.map((p) => {
@@ -46,7 +45,6 @@ export function Preview({
   const engine = useEngineStatus();
   const photoCache = useRef<{ url: string; bytes: Uint8Array | null }>({ url: '', bytes: null });
 
-  // Ekran genişliğine sığdır
   useEffect(() => {
     const el = wrapRef.current;
     if (!el) return;

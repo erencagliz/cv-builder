@@ -1,6 +1,5 @@
 export type Lang = 'tr' | 'en';
 
-/** "YYYY-MM" veya "YYYY" ya da boş */
 export type MonthValue = string;
 
 export interface DateRange {
@@ -20,7 +19,7 @@ export interface Personal {
   email: string;
   phone: string;
   location: string;
-  birthDate: string; // YYYY-MM-DD
+  birthDate: string;
   birthFormat: BirthFormat;
   nationality: string;
   military: MilitaryStatus;
@@ -29,7 +28,7 @@ export interface Personal {
   licenseYear: string;
   marital: MaritalStatus;
   travel: '' | 'yes' | 'no';
-  photo: string; // data URL (jpeg)
+  photo: string;
   showPhoto: boolean;
 }
 
@@ -40,7 +39,6 @@ export interface LinkItem {
   label: string;
 }
 
-/** Bölüm girdileri esnek alanlıdır; alanlar sections.ts içinde tanımlanır. */
 export interface Entry {
   id: string;
   [field: string]: unknown;
@@ -70,7 +68,6 @@ export type BuiltinSectionKey =
   | 'hobbies'
   | 'references';
 
-/** custom bölümler "custom:<id>" anahtarıyla sıralanır */
 export type SectionKey = BuiltinSectionKey | `custom:${string}`;
 
 export type HeadingStyle = 'rule' | 'line-after' | 'plain' | 'bar' | 'filled';
@@ -91,16 +88,16 @@ export interface Design {
     body: number;
     meta: number;
   };
-  leading: number; // em
-  paragraphGap: number; // pt
-  sectionGap: number; // pt
-  headingGap: number; // pt
-  entryGap: number; // pt
-  bulletGap: number; // pt
-  margins: { top: number; bottom: number; left: number; right: number }; // mm
+  leading: number;
+  paragraphGap: number;
+  sectionGap: number;
+  headingGap: number;
+  entryGap: number;
+  bulletGap: number;
+  margins: { top: number; bottom: number; left: number; right: number };
   headingStyle: HeadingStyle;
   headingCase: 'upper' | 'normal';
-  headingTracking: number; // pt
+  headingTracking: number;
   headingWeight: 'bold' | 'semibold' | 'regular';
   nameCase: 'upper' | 'normal';
   nameAlign: 'left' | 'center';
@@ -112,17 +109,13 @@ export interface Design {
   underlineLinks: boolean;
   groupRoles: boolean;
   personalInline: boolean;
-  /** Bağlantılar: tam adres, platform adı veya buton */
   linkStyle: 'url' | 'label' | 'button';
   icons: { sections: boolean; contacts: boolean; color: 'accent' | 'text' | 'muted' };
   photo: { shape: 'rounded' | 'circle' | 'square'; size: number; position: 'right' | 'left' };
-  /** Yetenek ve dil satırları: "Grup: a, b" ya da iki sütunlu tablo */
   linesLayout: 'inline' | 'table';
   bulletColor: 'accent' | 'muted';
-  /** Deneyim gibi girdilerin arasına ince çizgi */
   entryDivider: boolean;
   titleColor: 'accent' | 'muted';
-  /** Vurgu çizgisi rengi: çizgi rengi mi vurgu rengi mi */
   ruleColor: 'rule' | 'accent';
 }
 
@@ -143,10 +136,8 @@ export interface CV {
   order: SectionKey[];
   hidden: SectionKey[];
   titles: Partial<Record<SectionKey, string>>;
-  /** Başvurulan ilanın metni (ilan eşleştirme için) */
   jobPosting: string;
   coverLetter: CoverLetter;
-  /** Bölüm başlığı ikonları (ikon kimliği veya "none") */
   sectionIcons: Partial<Record<SectionKey, string>>;
   design: Design;
 }
@@ -156,10 +147,10 @@ export type EntrySectionKey = keyof CV['sections'];
 export interface CoverLetter {
   company: string;
   position: string;
-  recipient: string; // ör. "İnsan Kaynakları Departmanı"
+  recipient: string;
   city: string;
-  date: string; // YYYY-MM-DD, boşsa bugünün tarihi
+  date: string;
   greeting: string;
-  body: string; // paragraflar boş satırla ayrılır
+  body: string;
   closing: string;
 }

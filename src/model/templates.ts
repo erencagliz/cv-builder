@@ -39,7 +39,6 @@ export const BASE_DESIGN: Design = {
   ruleColor: 'rule',
 };
 
-/** Şablonların ortak "sade" değerleri; her şablon bunların üstüne yazar */
 const PLAIN: Partial<Design> = {
   icons: { sections: false, contacts: false, color: 'accent' },
   linesLayout: 'inline',
@@ -223,7 +222,6 @@ export function applyTemplate(design: Design, id: string): Design {
   const t = TEMPLATES.find((x) => x.id === id);
   if (!t) return design;
   const { sizes, ...rest } = t.apply;
-  // Kullanıcının fotoğraf ayarları ve renkleri korunur
   return { ...design, ...structuredClone(rest), sizes: { ...design.sizes, ...(sizes ?? {}) }, photo: design.photo, colors: design.colors, template: id };
 }
 
@@ -243,7 +241,6 @@ export const COLOR_PRESETS = [
 export const BULLETS = ['•', '–', '·', '›'];
 export const SEPARATORS = ['·', '|', '•', '/'];
 
-/** Yeni CV'lerin başlangıç tasarımı: İmza şablonu, şarap rengi */
 export function defaultDesign(): Design {
   const d = applyTemplate(structuredClone(BASE_DESIGN), 'signature');
   d.colors = { accent: '#7E2A3B', text: '#1B1F24', muted: '#5A5F69', rule: '#D6C3C8' };

@@ -2,7 +2,6 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { statSync } from 'node:fs';
 
-// İndirme ilerlemesi için: sunucu wasm'ı sıkıştırınca Content-Length gerçek boyutu vermez
 const COMPILER_WASM_SIZE = statSync('node_modules/@myriaddreamin/typst-ts-web-compiler/pkg/typst_ts_web_compiler_bg.wasm').size;
 
 export default defineConfig({

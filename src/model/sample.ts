@@ -1,7 +1,6 @@
 import type { CV } from './types';
 import { emptyCV, newEntry, uid } from './defaults';
 
-/** Örnek CV: kurgusal bir kişi. */
 export function sampleCV(): CV {
   const cv = emptyCV('Örnek CV – Bilgi İşlem');
   cv.personal = {
@@ -95,7 +94,6 @@ export function sampleCV(): CV {
   return cv;
 }
 
-/** İngilizce arayüzle gelen kullanıcılar için İngilizce örnek CV (kurgusal kişi). */
 export function sampleCVEn(): CV {
   const cv = sampleCV();
   cv.name = 'Sample CV – IT';

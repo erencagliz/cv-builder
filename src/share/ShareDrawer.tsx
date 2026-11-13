@@ -1,13 +1,12 @@
 import { useEffect, useState } from 'react';
-import { uiLocale } from '../i18n';
+import { uiLang, uiLocale } from '../i18n';
 import qrcode from 'qrcode-generator';
 import type { CV } from '../model/types';
 import { encodeCV, shareUrl } from './link';
 import { Icon, Checkbox } from '../ui/fields';
-import { useToast } from '../ui/app';
+import { useToast } from '../ui/toast';
 
-/** QR kodu SVG olarak çizer; veri sığmazsa null */
-export function qrSvg(text: string): string | null {
+function qrSvg(text: string): string | null {
   try {
     const q = qrcode(0, 'L');
     q.addData(text, 'Byte');
@@ -26,7 +25,7 @@ export function ShareDrawer({ cv, onClose }: { cv: CV; onClose: () => void }) {
   const hasPhoto = !!cv.personal.photo && cv.personal.showPhoto;
   useEffect(() => {
     let alive = true;
-    encodeCV(cv, { photo: photo && hasPhoto }).then((code) => alive && setUrl(shareUrl(code)));
+    encodeCV(cv, { photo: photo && hasPhoto }).then((code) => alive && setUrl(shareUrl(code, uiLang())));
     return () => {
       alive = false;
     };

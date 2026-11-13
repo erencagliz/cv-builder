@@ -1,5 +1,3 @@
-/** Fotoğraf okuma: tarayıcının açabildiği tüm görsel türleri (JPG, JFIF, PNG, WebP, AVIF, GIF, BMP; Safari'de HEIC). */
-
 export class PhotoError extends Error {}
 
 const isHeic = (f: File) => /heic|heif/i.test(f.type) || /\.(heic|heif)$/i.test(f.name);
@@ -9,14 +7,11 @@ const looksLikeImage = (f: File) =>
 type Drawable = { width: number; height: number; draw: (ctx: CanvasRenderingContext2D, sx: number, sy: number, sw: number, sh: number, w: number, h: number) => void };
 
 async function decode(file: File): Promise<Drawable> {
-  // 1) createImageBitmap: hızlı, EXIF yönünü uygular
   try {
     const bmp = await createImageBitmap(file, { imageOrientation: 'from-image' } as ImageBitmapOptions);
     return { width: bmp.width, height: bmp.height, draw: (ctx, sx, sy, sw, sh, w, h) => ctx.drawImage(bmp, sx, sy, sw, sh, 0, 0, w, h) };
   } catch {
-    /* bazı türlerde başarısız olabilir; <img> ile dene */
   }
-  // 2) <img>: Safari'nin HEIC gibi kendine özgü türleri
   const url = URL.createObjectURL(file);
   try {
     const img = new Image();
@@ -28,7 +23,6 @@ async function decode(file: File): Promise<Drawable> {
   }
 }
 
-/** Fotoğrafı 4:5 oranında, yüz genelde üstte olduğu için biraz yukarıdan kırpıp 480×600 JPEG'e küçültür */
 export async function cropPhoto(file: File): Promise<string> {
   if (!looksLikeImage(file)) throw new PhotoError('Bu bir görsel dosyası değil. JPG veya PNG bir fotoğraf seç.');
   if (file.size > 25 * 1024 * 1024) throw new PhotoError('Fotoğraf 25 MB’tan büyük. Daha küçük bir dosya seç.');

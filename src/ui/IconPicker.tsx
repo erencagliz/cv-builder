@@ -7,7 +7,6 @@ export function IconGlyph({ id, size = 16 }: { id: string; size?: number }) {
   return <span className="icon-glyph" style={{ width: size, height: size }} aria-hidden dangerouslySetInnerHTML={{ __html: svg }} />;
 }
 
-/** Bölüm başlığı ikonu seçici: küçük düğme + açılır ızgara */
 export function IconPicker({ value, onChange, label, enabled }: { value: string; onChange: (id: string) => void; label: string; enabled: boolean }) {
   const [open, setOpen] = useState(false);
   const [q, setQ] = useState('');

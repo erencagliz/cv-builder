@@ -2,13 +2,7 @@ import { useSyncExternalStore } from 'react';
 import type { RenderModel } from './buildModel';
 import type { SvgResult } from './engine';
 
-/**
- * Dizgi motoru (Web Worker) istemcisi. Kendi kendini onarır:
- *  - motor çökerse veya bir istek takılırsa worker kapatılıp yenisi açılır ve istek bir kez yeniden denenir
- *  - ilk yükleme başarısız olursa artan aralıklarla yeniden denenir
- *  - indirme ilerlemesi arayüze yayınlanır
- */
-type Pending = { resolve: (v: any) => void; reject: (e: Error) => void; timer: ReturnType<typeof setTimeout> };
+type Pending = { resolve(v: unknown): void; reject: (e: Error) => void; timer: ReturnType<typeof setTimeout> };
 let worker: Worker | null = null;
 let seq = 0;
 const pending = new Map<number, Pending>();
@@ -73,7 +67,6 @@ function callOnce<T>(msg: Record<string, unknown>, timeoutMs: number): Promise<T
   const id = ++seq;
   return new Promise<T>((resolve, reject) => {
     const timer = setTimeout(() => {
-      // takılan motor: yeniden başlat
       killWorker('Dizgi motoru yanıt vermedi; yeniden başlatıldı.');
       reject(new EngineCrash('timeout'));
     }, timeoutMs);
@@ -89,7 +82,6 @@ function callOnce<T>(msg: Record<string, unknown>, timeoutMs: number): Promise<T
 }
 
 let initPromise: Promise<void> | null = null;
-/** Motoru yükler; başarısız olursa 4 kez artan aralıkla yeniden dener. */
 export function initEngine(): Promise<void> {
   if (status.state === 'ready' && worker) return Promise.resolve();
   initPromise ??= (async () => {
@@ -115,14 +107,13 @@ export function initEngine(): Promise<void> {
   return initPromise;
 }
 
-/** Çizim istekleri: motor hazır değilse önce yüklenir; motor çökerse bir kez yeniden denenir. */
 async function call<T>(msg: Record<string, unknown>): Promise<T> {
   for (let attempt = 0; ; attempt++) {
     await initEngine();
     try {
       return await callOnce<T>(msg, 60_000);
     } catch (e) {
-      const crashed = !worker; // killWorker çağrıldıysa
+      const crashed = !worker;
       if (attempt >= 1 || !crashed) throw e instanceof Error ? e : new Error(String(e));
     }
   }
@@ -134,7 +125,6 @@ export const renderPdf = (model: RenderModel, photo: Uint8Array | null) =>
 
 export const countPages = (model: RenderModel, photo: Uint8Array | null) => call<number>({ type: 'pages', model, photo });
 
-/** data:image/jpeg;base64,... → bytes */
 export function dataUrlToBytes(url: string): Uint8Array | null {
   const m = /^data:[^;]+;base64,(.*)$/.exec(url);
   if (!m) return null;

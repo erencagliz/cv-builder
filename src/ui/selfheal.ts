@@ -1,18 +1,11 @@
-/**
- * Kendi kendini onarma: bakım gerektirmeden kullanıcıyı takılı bırakmayan küçük önlemler.
- *  - Yeni sürüm yayınlanınca eski sekmedeki tembel yüklenen dosyalar (chunk) bulunamaz → sayfayı bir kez yenile
- *  - Tarayıcıdan verilerin kalıcı saklanmasını iste (depolama dolduğunda silinmesin)
- *  - Arka plandaki yeni sürüm hazır olunca bir sonraki gezinmede kendiliğinden devreye girer (sw.js)
- */
 const RELOAD_KEY = 'heal-reload-at';
 
 export function reloadOnce(reason: string): boolean {
   try {
     const last = Number(sessionStorage.getItem(RELOAD_KEY) || 0);
-    if (Date.now() - last < 30_000) return false; // döngüye girme
+    if (Date.now() - last < 30_000) return false;
     sessionStorage.setItem(RELOAD_KEY, String(Date.now()));
   } catch {
-    /* sessionStorage yoksa da bir kez dene */
   }
   console.warn('Kendini onarma: sayfa yenileniyor —', reason);
   location.reload();
@@ -38,13 +31,11 @@ export function installSelfHeal() {
 }
 
 let asked = false;
-/** İlk kayıttan sonra kalıcı depolama iste; tarayıcı izin vermezse sessizce geç. */
 export function requestPersistence() {
   if (asked) return;
   asked = true;
   try {
     navigator.storage?.persisted?.().then((p) => (p ? undefined : navigator.storage.persist?.())).catch(() => {});
   } catch {
-    /* desteklenmiyor */
   }
 }

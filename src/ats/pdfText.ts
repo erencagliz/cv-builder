@@ -1,4 +1,3 @@
-/** PDF'ten metni, ATS'lerin çoğunun yaptığı gibi içerik akışı sırasıyla çıkarır. */
 export interface TextItem {
   str: string;
   x: number;
@@ -18,7 +17,6 @@ export interface PdfText {
 type PdfJs = typeof import('pdfjs-dist');
 let lib: Promise<PdfJs> | null = null;
 
-/** Tarayıcıda pdf.js'i ilk kullanımda yükler */
 export function loadPdfJs(): Promise<PdfJs> {
   lib ??= (async () => {
     const pdfjs = await import('pdfjs-dist');
@@ -31,7 +29,7 @@ export function loadPdfJs(): Promise<PdfJs> {
 
 export async function extractPdfText(data: Uint8Array, pdfjs?: PdfJs): Promise<PdfText> {
   const lib = pdfjs ?? (await loadPdfJs());
-  const task = lib.getDocument({ data: data.slice(), useSystemFonts: false });
+  const task = lib.getDocument({ data: data.slice(), useSystemFonts: false, verbosity: 0 });
   const doc = await task.promise;
   const items: TextItem[] = [];
   let text = '';

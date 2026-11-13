@@ -15,7 +15,6 @@ interface Vars {
   skills: string;
 }
 
-/** CV'deki bilgilerle doldurulan başlangıç metinleri; köşeli parantezli yerleri kullanıcı tamamlar. */
 export const LETTER_STARTERS: LetterStarter[] = [
   {
     id: 'experienced',
